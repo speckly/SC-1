@@ -32,18 +32,15 @@ const productDB = {
 			if (err) {
 				return callback(err, null);
 			} else {
-				// (^・ω・^§)ﾉ
 				dbConn.query(
-					`select p.productid, p.name, p.description, c.categoryid, category categoryname, 
-					p.brand, p.price, COUNT(distinct r.reviewid) reviewcount, pi.path imagepath, AVG( r.rating) rating, 
-					d.discountid, d.discount_percentage
+					`select p.productid, p.name, p.description, c.categoryid, category categoryname, p.brand, p.price, COUNT(distinct r.reviewid) reviewcount, pi.path imagepath, AVG( r.rating) rating, d.discountid, d.discount_percentage
 					from product p
 					join category c on c.categoryid = p.categoryid  
 					left join reviews r on r.productid = p.productid
 					left join productimages pi on pi.productid = p.productid 
 					left join discount d on d.productid = p.productid 
 					where p.productid = ${productid}
-					GROUP BY p.productid`, [], 
+					GROUP BY p.productid`, [], // (^・ω・^§)ﾉ
 					function (err, results) {
 						dbConn.end();
 						if (err) {
@@ -64,9 +61,8 @@ const productDB = {
 				return callback(err, null);
 			} else {
 				dbConn.query(
-					`select p.productid, p.name, p.description, c.categoryid, category categoryname, p.brand, p.price, 
-					COUNT(distinct r.reviewid) reviewcount, pi.path imagepath, AVG(r.rating) rating, d.discountid, 
-					d.discount_percentage from product p, category c, productimages pi, discount d, reviews r
+					`select p.productid, p.name, p.description, c.categoryid, category categoryname, p.brand, p.price, COUNT(distinct r.reviewid) reviewcount, pi.path imagepath, AVG( r.rating) rating, d.discountid, d.discount_percentage
+					from product p
 					join category c on c.categoryid = p.categoryid  
 					left join reviews r on r.productid = p.productid
 					left join productimages pi on pi.productid = p.productid 
@@ -112,24 +108,19 @@ const productDB = {
 
 	//Delete product by productid
 	deleteProduct: (productid, callback) => {
-		//Connects
 		var dbConn = db.getConnection();
 		dbConn.connect(function (err) {
-			//Return error
 			if (err) {
 				return callback(err, null);
 			} else {
-				//Sql query
 				dbConn.query(
-					`
-        delete from product where productid=?;`,
+					`delete from product where productid=?;`,
 					[productid],
 					function (err, results) {
-						//End connection
 						dbConn.end();
-
-						if (err) console.log(err);
-
+						if (err) {
+							console.log(err);
+						}
 						return callback(err, results);
 					}
 				);
@@ -139,23 +130,19 @@ const productDB = {
 
 	//Get 3 cheapest product based on categoryid
 	get3CheapestFromCategory: (categoryid, callback) => {
-		//Connects
 		var dbConn = db.getConnection();
 		dbConn.connect(function (err) {
-			//Return error
 			if (err) {
 				return callback(err, null);
 			} else {
-				//Sql query
 				dbConn.query(
 					`SELECT * FROM product where categoryid=? order by price asc LIMIT 3;`,
 					[categoryid],
 					function (err, results) {
-						//End connection
 						dbConn.end();
-
-						if (err) console.log(err);
-
+						if (err) {
+							console.log(err);
+						}
 						return callback(err, results);
 					}
 				);
@@ -164,38 +151,28 @@ const productDB = {
 	},
 
 	updateProduct: (
-		name,
-		description,
-		categoryid,
-		brand,
-		price,
-		productid,
-		callback
+		name, description, categoryid,
+		brand, price, productid, callback
 	) => {
-		//Connects
 		var dbConn = db.getConnection();
 		dbConn.connect(function (err) {
-			//Return error
 			if (err) {
 				return callback(err, null);
 			} else {
-				//Sql query
 				dbConn.query(
-					`
-        Update product set 
-        name=?, 
-        description=?, 
-        categoryid=?, 
-        brand=?,
-        price=?
-        where productid=?;`,
+					`Update product set 
+					name=?, 
+					description=?, 
+					categoryid=?, 
+					brand=?,
+					price=?
+					where productid=?;`,
 					[name, description, categoryid, brand, price, productid],
 					function (err, results) {
-						//End connection
 						dbConn.end();
-
-						if (err) console.log(err);
-
+						if (err) {
+							console.log(err);
+						}
 						return callback(err, results);
 					}
 				);
