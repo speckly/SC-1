@@ -12,6 +12,10 @@ Windows, in two cmd/powershell instances: ```node ./BackEnd/server.js``` && ```n
 
 # Notes 
 
+Categories of OWASP TOP 10 2021:
+A03 Injection
+
+
 ## Endpoints
 
 ### 1. POST /user/isloggedin
@@ -46,12 +50,32 @@ SELECT, INSERT, both prepared.
 ### 7. GET /product
 ### 8. POST /user/login
 ### 9. POST /users
+> :fire: **Critical:** A3: Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS. This username is displayed when the reviews pull the name and browser reflects it without output sanitization
+
 ### 10. GET /users
+
+Unknown use for this endpoint. Very sensitive, shows passwords in plain
+
+> :fire: **Critical:** A1: Accessing API with missing access controls for POST, PUT and DELETE. This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. This exposes userid, username, email, contact, type, profile_pic_url, created_at. These even include the admin users and therefore VERTICAL PRIVILEGE ESCALATION!!!
+
 ### 11. GET /users/:id
 ### 14. GET /category
 ### 16. GET /product/:id
 ### 19. GET /product/:id/reviews
+> :warning: **Caution:** No output sanitisation, risk is displaying stored XSS
+
 ### 21. GET /discount
 ### 22. GET /discount/:id
 ### 24. GET /product/:id/image
 ### 25. GET /product/cheapest/:categoryid
+
+## Pages
+
+### admin.html 
+
+admin.html is protected by an inline script, however it exposes some admin endpoints as users can capture the . These admin endpoints should therefore not overlook any security
+
+## Cryptography 
+
+:warning: **Caution:** All passwords stored in the mySQL instance are not hashed
+
