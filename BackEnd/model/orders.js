@@ -41,20 +41,18 @@ const orderDB = {
                                     return callback({ message: "Data doesn't match! Please clear cart and try again" })
                                 } else {
                                     cart = JSON.stringify(cart)
-                                    //Sql query
                                     dbConn.query(`
-                            insert into orders 
-                            (userid, cart, total)
-                            values(?, ?, ?);`, [userid, cart, total], function (err, results) {
-
-                                        //End connection
-                                        dbConn.end();
-
-                                        if (err)
-                                            console.log(err)
-
-                                        return callback(err, results)
-                                    });
+                                        insert into orders 
+                                        (userid, cart, total)
+                                        values(?, ?, ?);`, [userid, cart, total], 
+                                        function (err, results) {
+                                            dbConn.end();
+                                            if (err){
+                                                console.log(err)
+                                            }
+                                            return callback(err, results)
+                                        }
+                                    );
                                 }
                             }
                     });
@@ -63,7 +61,7 @@ const orderDB = {
         });
     },
 
-    //Get product by userid
+    //Get product by userid - 2
     getOrder: (userid, callback) => {
         var dbConn = db.getConnection();
         dbConn.connect(function (err) {
@@ -80,9 +78,7 @@ const orderDB = {
                 });
 
             }
-
         });
-
     },
 };
 

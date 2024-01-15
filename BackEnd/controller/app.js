@@ -37,7 +37,7 @@ app.use(bodyParser.json()); //Chunking for json POST
 //Middleware
 app.use(express.static(path.join(__dirname, "../public/")));
 
-//Get if user is logged in with correct token
+// 1 Get if user is logged in with correct token
 app.post("/user/isloggedin", verifyToken, (req, res) => {
     if (req.body.userid == req.userid && req.body.type == req.type)
         res.status(200).json({
@@ -47,23 +47,27 @@ app.post("/user/isloggedin", verifyToken, (req, res) => {
     else res.status(401).json({ Message: "Not logged in" });
 });
 
-//Get order
+// 2 Get order
 app.get("/order/:userid", verifyToken, (req, res) => {
     orderDB.getOrder(req.userid, (err, results) => {
-        if (err) res.status(500).json({ result: "Internal Error" });
+        if (err) {
+            res.status(500).json({ result: "Internal Error" });
+        }
         else {
             res.status(200).send(results);
         }
     });
 });
 
-//Add Order
+// 3 Add Order
 app.post("/order", verifyToken, (req, res) => {
     const { cart, total } = req.body;
 
     orderDB.addOrder(req.userid, cart, total, (err, results) => {
         if (err) {
-            if (err?.message) res.status(400).json({ message: err?.message });
+            if (err?.message) {
+                res.status(400).json({ message: err?.message });
+            }
             else res.status(500).json({ message: "Internal Error" });
         }
 
@@ -72,16 +76,12 @@ app.post("/order", verifyToken, (req, res) => {
     });
 });
 
-//Update product
+// 4 Update product
 app.put("/product/:productid", verifyToken, (req, res) => {
     const { name, description, categoryid, brand, price } = req.body;
     productDB.updateProduct(
-        name,
-        description,
-        categoryid,
-        brand,
-        price,
-        req.params.productid,
+        name, description, categoryid,
+        brand, price, req.params.productid,
         (err, results) => {
             if (err) res.status(500).json({ result: "Internal Error" });
             //No error, response with productid
@@ -96,7 +96,7 @@ app.put("/product/:productid", verifyToken, (req, res) => {
     );
 });
 
-//Delete Review
+// 5 Delete Review
 app.delete("/review/:reviewid", verifyToken, (req, res) => {
     reviewDB.deleteReview(req.params.reviewid, req.userid, (err, results) => {
         if (err) res.status(500).json({ result: "Internal Error" });
@@ -108,7 +108,7 @@ app.delete("/review/:reviewid", verifyToken, (req, res) => {
     });
 });
 
-//get all product by brand
+// 6 get all product by brand
 app.get("/product/brand/:brand", (req, res) => {
     productDB.getAllProductByBrand(req.params.brand, (err, results) => {
         if (err) res.status(500).json({ result: "Internal Error" });
@@ -119,7 +119,7 @@ app.get("/product/brand/:brand", (req, res) => {
     });
 });
 
-//get all product
+// 7 get all product
 app.get("/product", (req, res) => {
     productDB.getAllProduct((err, results) => {
         if (err) res.status(500).json({ result: "Internal Error" });
@@ -130,7 +130,7 @@ app.get("/product", (req, res) => {
     });
 });
 
-//login
+// 8 login
 app.post("/user/login", function (req, res) {
     var username = req.body.username;
     var password = req.body.password;
@@ -154,7 +154,7 @@ app.post("/user/login", function (req, res) {
     });
 });
 
-//Api no. 1 Endpoint: POST /users/ | Add new user
+//Api no. 9 Endpoint: POST /users/ | Add new user
 app.post("/users", (req, res) => {
     var { username, email, contact, password, profile_pic_url } = req.body;
 
@@ -187,7 +187,7 @@ app.post("/users", (req, res) => {
     );
 });
 
-//Api no. 2 Endpoint: GET /users/ | Get all user
+//Api no. 10 Endpoint: GET /users/ | Get all user
 app.get("/users", (req, res) => {
     userDB.getAllUser((err, results) => {
         if (err) res.status(500).json({ result: "Internal Error" });
@@ -198,7 +198,7 @@ app.get("/users", (req, res) => {
     });
 });
 
-//Api no. 3 Endpoint: GET /users/:id/ | Get user by userid
+//Api no. 11 Endpoint: GET /users/:id/ | Get user by userid
 app.get("/users/:id", (req, res) => {
     userDB.getUser(req.params.id, (err, results) => {
         if (err) res.status(500).json({ result: "Internal Error" });
@@ -209,7 +209,7 @@ app.get("/users/:id", (req, res) => {
     });
 });
 
-//Api no. 4 Endpoint: PUT /users/:id/ | Update info user by userid
+//Api no. 12 Endpoint: PUT /users/:id/ | Update info user by userid
 app.put("/users/:id", verifyToken, (req, res) => {
     const { username, email, contact, password, profile_pic_url, oldpassword } =
         req.body;
@@ -239,7 +239,7 @@ app.put("/users/:id", verifyToken, (req, res) => {
 
 //CATEGORY
 
-//Api no. 5 Endpoint: POST /category | Add new category
+//Api no. 13 Endpoint: POST /category | Add new category
 app.post("/category", verifyToken, (req, res) => {
     const { category, description } = req.body;
     categoryDB.addNewCategory(category, description, (err, results) => {
@@ -257,7 +257,7 @@ app.post("/category", verifyToken, (req, res) => {
     });
 });
 
-//Api no. 6 Endpoint: GET /category | Get all category
+//Api no. 14 Endpoint: GET /category | Get all category
 app.get("/category", (req, res) => {
     categoryDB.getAllCategory((err, results) => {
         if (err) res.status(500).json({ result: "Internal Error" });
@@ -270,7 +270,7 @@ app.get("/category", (req, res) => {
 
 //PRODUCT
 
-//Api no. 7 Endpoint: POST /product/ | Add new product
+//Api no. 15 Endpoint: POST /product/ | Add new product
 app.post("/product", verifyToken, (req, res) => {
     const { name, description, categoryid, brand, price } = req.body;
     productDB.addNewProduct(
@@ -287,7 +287,7 @@ app.post("/product", verifyToken, (req, res) => {
     );
 });
 
-//Api no. 8 GET /product/:id | Get product info from productid
+//Api no. 16 GET /product/:id | Get product info from productid
 app.get("/product/:id", (req, res) => {
     productDB.getProduct(req.params.id, (err, results) => {
         if (err) {
@@ -300,7 +300,7 @@ app.get("/product/:id", (req, res) => {
     });
 });
 
-//Api no. 9 Endpoint: DELETE /product/:id/ | Delete product from productid
+//Api no. 17 Endpoint: DELETE /product/:id/ | Delete product from productid
 app.delete("/product/:id", verifyToken, (req, res) => {
     productDB.deleteProduct(req.params.id, (err, results) => {
         if (err) res.status(500).json({ result: "Internal Error" });
@@ -310,7 +310,7 @@ app.delete("/product/:id", verifyToken, (req, res) => {
 
 //REVIEW
 
-//Api no. 10 Endpoint: POST /product/:id/review/ | Add review
+//Api no. 18 Endpoint: POST /product/:id/review/ | Add review
 app.post("/product/:id/review/", verifyToken, (req, res) => {
     const { userid, rating, review } = req.body;
     reviewDB.addReview(userid, rating, review, req.params.id, (err, results) => {
@@ -320,7 +320,7 @@ app.post("/product/:id/review/", verifyToken, (req, res) => {
     });
 });
 
-//Api no. 11 Endpoint: GET /product/:id/reviews | Get all review from productid
+//Api no. 19 Endpoint: GET /product/:id/reviews | Get all review from productid
 app.get("/product/:id/reviews", (req, res) => {
     reviewDB.getProductReview(req.params.id, (err, results) => {
         if (err) res.status(500).json({ result: "Internal Error" });
@@ -331,7 +331,7 @@ app.get("/product/:id/reviews", (req, res) => {
 
 //BONUS REQUIREMENT DISCOUNT
 
-//Api no. 15 Endpoint: POST /product/:id/discount | Add new discount
+//Api no. 20 Endpoint: POST /product/:id/discount | Add new discount
 app.post("/discount/:productid", verifyToken, (req, res) => {
     if (req.type.toLowerCase() != "admin")
         res.status(403).json({ message: "Not authorized!" });
@@ -340,12 +340,8 @@ app.post("/discount/:productid", verifyToken, (req, res) => {
     const { discount_percentage, start_at, end_at, name, description } = req.body;
     const productid = req.params.productid;
     discountDB.addNewDiscount(
-        productid,
-        discount_percentage,
-        start_at,
-        end_at,
-        name,
-        description,
+        productid, discount_percentage, start_at,
+        end_at, name, description,
         (err, results) => {
             if (err) {
                 if (
@@ -359,7 +355,7 @@ app.post("/discount/:productid", verifyToken, (req, res) => {
     );
 });
 
-//Api no. 16 Endpoint: GET /discount/ | Get all discount
+//Api no. 21 Endpoint: GET /discount/ | Get all discount
 app.get("/discount", (req, res) => {
     discountDB.getAllDiscount((err, results) => {
         if (err) res.status(500).json({ result: "Internal Error" });
@@ -369,17 +365,20 @@ app.get("/discount", (req, res) => {
     });
 });
 
-//Api no. 17 Endpoint: GET /product/:id/discounts | Get user by userid
+//Api no. 22 Endpoint: GET /product/:id/discounts | Get user by userid
 app.get("/discount/:id/", (req, res) => {
     discountDB.getProductDiscount(req.params.id, (err, results) => {
-        if (err) res.status(500).json({ result: "Internal Error" });
-        else res.status(200).json(results);
+        if (err) {
+            res.status(500).json({ result: "Internal Error" });
+        } else {
+            res.status(200).json(results);
+        }
     });
 });
 
 //BONUS REQUIREMENT PRODUCT IMAGE
 
-//Api no. 13 Endpoint: POST /product/:id/image  | Upload product image
+//Api no. 23 Endpoint: POST /product/:id/image  | Upload product image
 app.post(
     "/product/:id/image",
     verifyToken,
@@ -445,7 +444,7 @@ app.post(
     }
 );
 
-//Api no. 14 Endpoint: GET /product/:id/image | Get product image by productid
+//Api no. 24 Endpoint: GET /product/:id/image | Get product image by productid
 app.get("/product/:id/image", (req, res) => {
     productImagesDB.getProductImage(req.params.id, (err, results) => {
         if (err) res.status(500).json({ result: "Internal Error" });
@@ -453,7 +452,7 @@ app.get("/product/:id/image", (req, res) => {
     });
 });
 
-//Api no. 20 Endpoint: GET /product/cheapest/:categoryid | Get 3 cheapest product by category
+//Api no. 25 Endpoint: GET /product/cheapest/:categoryid | Get 3 cheapest product by category
 app.get("/product/cheapest/:categoryid", (req, res) => {
     productDB.get3CheapestFromCategory(req.params.categoryid, (err, results) => {
         if (err) res.status(500).json({ result: "Internal Error" });
