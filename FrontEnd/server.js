@@ -1,4 +1,4 @@
-const express = require('express'); // hello zoey here
+const express = require('express'); 
 const serveStatic = require('serve-static');
 
 var hostname = "localhost";
