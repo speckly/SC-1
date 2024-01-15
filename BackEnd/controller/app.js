@@ -172,11 +172,9 @@ app.post("/users", (req, res) => {
             if (err) {
                 //Check if name or email is dup"
                 if (err.code == "ER_DUP_ENTRY")
-                    res
-                        .status(422)
-                        .json({
-                            message: `The new username OR new email provided already exists.`,
-                        });
+                    res.status(422).json({
+                        message: `The new username OR new email provided already exists.`,
+                    });
                 //Otherwise unknown error
                 else res.status(500).json({ message: "Internal Error" });
             }

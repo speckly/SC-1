@@ -34,9 +34,7 @@ const productDB = {
 			} else {
 				// (^・ω・^§)ﾉ
 				dbConn.query(
-					`select p.productid, p.name, p.description, c.categoryid, category categoryname, 
-					p.brand, p.price, COUNT(distinct r.reviewid) reviewcount, pi.path imagepath, AVG( r.rating) rating, 
-					d.discountid, d.discount_percentage
+					`select p.productid, p.name, p.description, c.categoryid, category categoryname, p.brand, p.price, COUNT(distinct r.reviewid) reviewcount, pi.path imagepath, AVG( r.rating) rating, d.discountid, d.discount_percentage
 					from product p
 					join category c on c.categoryid = p.categoryid  
 					left join reviews r on r.productid = p.productid
@@ -64,9 +62,8 @@ const productDB = {
 				return callback(err, null);
 			} else {
 				dbConn.query(
-					`select p.productid, p.name, p.description, c.categoryid, category categoryname, p.brand, p.price, 
-					COUNT(distinct r.reviewid) reviewcount, pi.path imagepath, AVG(r.rating) rating, d.discountid, 
-					d.discount_percentage from product p, category c, productimages pi, discount d, reviews r
+					`select p.productid, p.name, p.description, c.categoryid, category categoryname, p.brand, p.price, COUNT(distinct r.reviewid) reviewcount, pi.path imagepath, AVG( r.rating) rating, d.discountid, d.discount_percentage
+					from product p
 					join category c on c.categoryid = p.categoryid  
 					left join reviews r on r.productid = p.productid
 					left join productimages pi on pi.productid = p.productid 
