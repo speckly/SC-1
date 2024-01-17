@@ -57,6 +57,7 @@ SELECT, INSERT, both prepared.
 Unknown use for this endpoint. Very sensitive, shows passwords in plain
 
 > :fire: **Critical:** A1: Accessing API with missing access controls for POST, PUT and DELETE. This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. This exposes userid, username, email, contact, type, profile_pic_url, created_at. These even include the admin users and therefore VERTICAL PRIVILEGE ESCALATION!!!
+> only for review.js, others are all jwt validated
 
 ### 11. GET /users/:id
 ### 14. GET /category
