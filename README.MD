@@ -31,11 +31,12 @@ This operator allows you to safely access properties of an object without causin
 
 SELECT, INSERT, both prepared. 
 
-> :fire: **Critical:** Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS
+> :fire: **Critical:** A3: Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS
 
 
 ### 4. PUT /product/:productid
 ### 5. DELETE /review/:reviewid
+> :fire: **Critical:** A3: SQLi 
 ### 12. PUT /users/:id
 ### 13. POST /category
 ### 15. POST /product
@@ -54,11 +55,12 @@ SELECT, INSERT, both prepared.
 
 ### 10. GET /users
 
+> :fire: **Critical:** A1: Accessing API with missing access controls for POST, PUT and DELETE. This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. This exposes userid, username, email, contact, type, profile_pic_url, created_at. These even include the admin users and therefore VERTICAL PRIVILEGE ESCALATION!!!
+> only for review.js, others are all jwt validated
+
 Unknown use for this endpoint. Very sensitive, shows passwords in plain
 
-> :fire: **Critical:** A1: Accessing API with missing access controls for POST, PUT and DELETE. This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. 
-
-This exposes userid, username, email, contact, type, profile_pic_url, created_at. These can then tell malicious third parties who the admins are. Risk of vertical privilege escalation is increased. A demonstration of this vulnerability can be done by running ./
+This exposes userid, username, email, contact, type, profile_pic_url, created_at. These can then tell malicious third parties who the admins are. Risk of vertical privilege escalation is increased. A demonstration of this vulnerability can be done by running ./exploit_demos/admin.py
 
 ### 11. GET /users/:id
 ### 14. GET /category

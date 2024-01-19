@@ -48,6 +48,7 @@ const reviewDB = {
 	},
 	deleteReview: (reviewid, userid, callback) => {
 		var dbConn = db.getConnection();
+		console.log(reviewid)
 		dbConn.connect(function (err) {
 			if (err) {
 				return callback(err, null)
