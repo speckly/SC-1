@@ -25,7 +25,7 @@ const productDB = {
 		});
 	},
 
-	//Get product by userid
+	// 16: Get product by productid
 	getProduct: (productid, callback) => {
 		var dbConn = db.getConnection();
 		dbConn.connect(function (err) {

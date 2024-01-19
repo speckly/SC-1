@@ -52,6 +52,7 @@ const reviewDB = {
 			if (err) {
 				return callback(err, null)
 			} else {
+				// (^・ω・^§)ﾉ
 				dbConn.query(`delete from reviews where reviewid = ${reviewid} and userid = ${userid};`, 
 				[], function (err, results) {
 						dbConn.end();

