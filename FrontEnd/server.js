@@ -1,16 +1,13 @@
 const express = require('express'); 
 const serveStatic = require('serve-static');
 
-var hostname = "localhost";
+var hostname = "0.0.0.0";
 var port = 3001;
 
 var app = express();
 
 app.use(function (req, res, next) {
-    console.log(req.url);
-    console.log(req.method);
-    console.log(req.path);
-    console.log(req.query.id);
+    console.log(`${req.method} ${req.path}`)
 
     if (req.method != "GET") {
         res.type('.html');

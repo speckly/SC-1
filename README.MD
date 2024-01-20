@@ -8,12 +8,15 @@ Use tools
 
 # Usage
 
-Windows, in two cmd/powershell instances: ```node ./BackEnd/server.js``` && ```node ./FrontEnd/server.js```
+Windows, ```./start.bat```
 
 # Notes 
 
 Categories of OWASP TOP 10 2021:
+A01 Broken Access Control
+A02 Cryptographic failure
 A03 Injection
+A09 Security Logging and Monitoring Failures
 
 
 ## Endpoints
@@ -58,6 +61,36 @@ SELECT, INSERT, both prepared.
 > :fire: **Critical:** A1: Accessing API with missing access controls for POST, PUT and DELETE. This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. This exposes userid, username, email, contact, type, profile_pic_url, created_at. These even include the admin users and therefore VERTICAL PRIVILEGE ESCALATION!!!
 > only for review.js, others are all jwt validated
 
+To view the admin page before it redirects
+```bash
+cutycapt --url=http://hostname:3001/admin.html --delay=200 --out=admin200.png
+```
+
+To view the admin page source code to view endpoints
+```bash
+python ./exploit_demos/admin.py
+```
+
+Resolution is to use middleware before serving the page
+```js
+const express = require('express');
+const path = require('path');
+const verifyToken = require('../auth/verifyToken.js');
+
+const app = express();
+
+const protectedRoutesMiddleware = (req, res, next) => {
+    const protectedRoutes = ['/admin', '/dashboard'];
+    if (protectedRoutes.some(route => req.path.startsWith(route))) {
+        return verifyToken(req, res, next);
+    }
+    next();
+};
+
+app.use(protectedRoutesMiddleware);
+app.use(express.static(path.join(__dirname, "public"))); // Legacy line
+```
+
 Unknown use for this endpoint. Very sensitive, shows passwords in plain
 
 This exposes userid, username, email, contact, type, profile_pic_url, created_at. These can then tell malicious third parties who the admins are. Risk of vertical privilege escalation is increased. A demonstration of this vulnerability can be done by running ./exploit_demos/admin.py
@@ -86,9 +119,11 @@ http://localhost:8081/product/8%20GROUP%20BY%20p.productid%20UNION%20SELECT%20nu
 
 ### admin.html 
 
+> :information: **Information** 
 admin.html is protected by an inline script, however it exposes some admin endpoints as users can capture the . These admin endpoints should therefore not overlook any security
 
 ## Cryptography 
 
-:warning: **Caution:** All passwords stored in the mySQL instance are not hashed
+> :warning: **Caution:** A2: All passwords stored in the mySQL instance are not hashed
+> :warning: **Caution:** A2: Uses HTTP protocol and is susceptible to MITM
 
