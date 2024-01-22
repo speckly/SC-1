@@ -12,11 +12,16 @@ Windows, ```./start.bat```
 
 # Notes 
 
+What category does allowing -97 products fall under? Maybe 
+
 Categories of OWASP TOP 10 2021:
-A01 Broken Access Control
-A02 Cryptographic failure
-A03 Injection
-A09 Security Logging and Monitoring Failures
+A01 Broken Access Control (1/2)
+A02 Cryptographic failure (2/2)
+A03 Injection (2/2)
+A04 Insecure Design 
+A07 Identification and Authentication failures (2/2)
+A08 Software and Data Integrity Failures
+A09 Security Logging and Monitoring Failures 
 
 
 ## Endpoints
@@ -34,7 +39,7 @@ This operator allows you to safely access properties of an object without causin
 
 SELECT, INSERT, both prepared. 
 
-> :fire: **Critical:** A3: Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS
+> :fire: **Critical:** A3 (detailed): Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS
 
 
 ### 4. PUT /product/:productid
@@ -51,14 +56,51 @@ SELECT, INSERT, both prepared.
 ### Without verifyToken middleware
 
 ### 6. GET /product/brand/:brand
+
+Looks good, viewing by brand is not sensitive
+
 ### 7. GET /product
+
+Looks good, products are public view
+
 ### 8. POST /user/login
+
+Has no token verification as this is to login. 
+
+> :fire: **Critical** A7 (brief): Permits brute force or other automated attacks. Can lead to privilege escalation. Brute force success chance is also lowered due to weak password policy. See Endpoint 9 A7
+
+Resolution by adding a rate limiter
+```bash
+npm install express-rate-limit
+```
+./BackEnd/app.js
+```js
+const express = require('express');
+const rateLimit = require('express-rate-limit');
+
+const app = express();
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+});
+
+// Apply the rate limiter to all requests
+app.use(limiter);
+
+```
+
 ### 9. POST /users
-> :fire: **Critical:** A3: Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS. This username is displayed when the reviews pull the name and browser reflects it without output sanitization
+> :fire: **Critical:** A3 (detailed, continued): Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS. This username is displayed when the reviews pull the name and browser reflects it without output sanitization
+
+> :warning: **Warning:** A7 (detailed): No password policy is enforced, even if hashing (currently not implemented, see Cryptography section below) is implemented, the passwords can be cracked through rainbow tables. Another risk is the increased chance of a brute force attack if users use common passwords. See Endpoint 8 A7
+
+
 
 ### 10. GET /users
 
-> :fire: **Critical:** A1: Accessing API with missing access controls for POST, PUT and DELETE. This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. This exposes userid, username, email, contact, type, profile_pic_url, created_at. These even include the admin users and therefore VERTICAL PRIVILEGE ESCALATION!!!
+> :fire: **Critical:** A1: Accessing API with missing access controls for POST, PUT and DELETE. This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. This exposes userid, username, email, contact, type, profile_pic_url, created_at. These even include the admin users and therefore VERTICAL PRIVILEGE ESCALATION
 > only for review.js, others are all jwt validated
 
 To view the admin page before it redirects
@@ -99,11 +141,11 @@ This exposes userid, username, email, contact, type, profile_pic_url, created_at
 ### 14. GET /category
 ### 16. GET /product/:id
 
-> :fire: **Critical:** A3: SQLi
+> :fire: **Critical:** A3 (brief): Blind SQLi. Medium risk as the injected code cannot escape the GROUP BY p.productid statement and therefore will need to work around it. Current found payload can output only the last row of any table. 
 
-Payload: 
+Blind sqli guessing the tables
 ```sql
-8 OR 1=1 GROUP BY p.productid UNION SELECT u.username, u.password, u.type, u.email, null, null, null, null, null, p.productid, table_schema, table_name FROM INFORMATION_SCHEMA.TABLES, user u, product p
+8 GROUP BY p.productid UNION SELECT null, null, null, null, null, null, null, null, null, p.productid, table_schema, table_name FROM INFORMATION_SCHEMA.TABLES, product p WHERE table_name = 'user'
 ```
 
 http://localhost:8081/product/8%20GROUP%20BY%20p.productid%20UNION%20SELECT%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20p.productid,%20table_schema,%20table_name%20FROM%20INFORMATION_SCHEMA.TABLES,%20product%20p
@@ -125,5 +167,6 @@ admin.html is protected by an inline script, however it exposes some admin endpo
 ## Cryptography 
 
 > :warning: **Caution:** A2: All passwords stored in the mySQL instance are not hashed
+Confirmed to be classified as a vulnerability
 > :warning: **Caution:** A2: Uses HTTP protocol and is susceptible to MITM
 

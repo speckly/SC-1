@@ -81,7 +81,7 @@ const productDB = {
 		});
 	},
 
-	//Get all product
+	//6: Get all product
 	getAllProductByBrand: (brand, callback) => {
 		var dbConn = db.getConnection();
 		dbConn.connect(function (err) {

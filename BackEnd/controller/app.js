@@ -39,7 +39,6 @@ app.use(express.static(path.join(__dirname, "../public/")));
 
 // 1 Get if user is logged in with correct token
 app.post("/user/isloggedin", verifyToken, (req, res) => {
-    console.log(req.body.userid, req.userid, req.body.type, req.type, req.poodsasadj)
     if (req.body.userid == req.userid && req.body.type == req.type)
         res.status(200).json({
             userid: req.userid,

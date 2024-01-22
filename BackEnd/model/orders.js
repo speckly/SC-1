@@ -21,9 +21,8 @@ const orderDB = {
                         GROUP BY p.productid;`, [userDID, userPID], 
                         function (err, results) {
 
-                            if (err)
-                                console.log(err)
-
+                            // if (err)
+                            //     console.log(err)
                             let { productid, price, discount_percentage } = results[0]
                             let discountPrice = discount_percentage == 0 || discount_percentage == null ? price : ((price / 100) * (100 - discount_percentage)).toFixed(2)
                             let checkDiscountPercentage = (userDP == discount_percentage) || ((userDP == 0 || userDP == null) && (discount_percentage == 0 || discount_percentage == null));
