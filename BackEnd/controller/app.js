@@ -154,7 +154,7 @@ app.post("/user/login", function (req, res) {
     });
 });
 
-//Api no. 9 Endpoint: POST /users/ | Add new user
+// Api no. 9 Endpoint: POST /users/ | Add new user
 app.post("/users", (req, res) => {
     var { username, email, contact, password, profile_pic_url } = req.body;
 
@@ -162,12 +162,7 @@ app.post("/users", (req, res) => {
         profile_pic_url = "";
     }
     userDB.addNewUser(
-        username,
-        email,
-        contact,
-        password,
-        "Customer",
-        profile_pic_url,
+        username, email, contact, password, "Customer", profile_pic_url,
         (err, results) => {
             if (err) {
                 //Check if name or email is dup"

@@ -18,11 +18,8 @@ Categories of OWASP TOP 10 2021:
 A01 Broken Access Control (2/2)
 A02 Cryptographic failure (2/2)
 A03 Injection (2/2)
-A04 Insecure Design 
+A04 Insecure Design (1/2)
 A07 Identification and Authentication failures (2/2)
-A08 Software and Data Integrity Failures
-A09 Security Logging and Monitoring Failures 
-
 
 ## Endpoints
 
@@ -40,6 +37,7 @@ This operator allows you to safely access properties of an object without causin
 SELECT, INSERT, both prepared. 
 
 > :fire: **Critical:** A3 (detailed): Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS
+
 
 
 ### 4. PUT /product/:productid
@@ -72,7 +70,25 @@ function verifyTokenAdmin(req, res, next) {
 
 ### 5. DELETE /review/:reviewid
 > :fire: **Critical:** A3 (brief2): SQLi 
+
+
+> [!WARNING]  A1 (detailed, continued): See A1 Endpoint 4. The impact of this broken access is that any user's reviews can be deleted
+
+Review id:
+```sql
+8 OR 1=1
+```
+
+User id is decoded using JWT, unless the JWT can be forged, the user id cannot be changed
+
+Resolution is to use placeholders
+```js
+```
+
 ### 12. PUT /users/:id
+
+
+
 ### 13. POST /category
 ### 15. POST /product
 ### 17. DELETE /product/:id
@@ -121,48 +137,104 @@ app.use(limiter);
 ### 9. POST /users
 > :fire: **Critical:** A3 (detailed, continued): Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS. This username is displayed when the reviews pull the name and browser reflects it without output sanitization
 
+Resolution is to whitelist input, escape them from html characters and sanitise output in endpoints where it returns stored data. Can use the [Validator]() module 
+```bash
+npm install validator
+```
+Example of escaping:
+```js
+const validator = require('validator');
+
+// Api no. 9 Endpoint: POST /users/ | Add new user
+app.post("/users", (req, res) => {
+    //...
+    username = validator.escape(username);
+    email = validator.escape(email);
+    contact = validator.escape(contact);
+    userDB.addNewUser(
+        username, email, contact, password, "Customer", profile_pic_url,
+        //...
+    );
+});
+```
+Example of whitelisting:
+```js
+const validator = require('validator');
+
+//...
+if (!validator.isEmail(email)) {
+    res.status(422).json({ message: "Invalid email address" });
+    return;
+}
+```
+
+
 > :warning: **Warning:** A7 (detailed): No password policy is enforced, even if hashing (currently not implemented, see Cryptography section below) is implemented, the passwords can be cracked through rainbow tables. Another risk is the increased chance of a brute force attack if users use common passwords. See Endpoint 8 A7
+
+To implement a password policy
+```js
+const passwordValidator = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+
+if (!passwordValidator.test(password)) {
+    return res.status(422).json({
+        message: "Password must contain at least 8 characters, including one letter and one digit.",
+    });
+}
+```
 
 ### 10. GET /users
 
-> :fire: **Critical:** A1: Accessing API with missing access controls for POST, PUT and DELETE. This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. This exposes userid, username, email, contact, type, profile_pic_url, created_at. These even include the admin users and result in vertical privilege escalation
-> only for review.js, others are all jwt validated
+> :fire: **Critical:** A1 (brief, this doesnt have any middleware): Accessing API with missing access controls for POST, PUT and DELETE. This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. This exposes userid, username, email, contact, type, profile_pic_url, created_at. These even include the admin users and result in vertical privilege escalation.
 
 To view the admin page before it redirects
 ```bash
 cutycapt --url=http://hostname:3001/admin.html --delay=200 --out=admin200.png
 ```
 
-To view the admin page source code to view endpoints
+To view the admin page source code to view endpoints. Here we use the requests module from python as we are only interested in reading the raw HTML source. Using a browser will execute it and therefore redirect us to the front page as we are not authenticated as an administrator
 ```bash
 python ./exploit_demos/admin.py
 ```
-
-Resolution is to use middleware before serving the page
-```js
-const express = require('express');
-const path = require('path');
-const verifyToken = require('../auth/verifyToken.js');
-
-const app = express();
-
-const protectedRoutesMiddleware = (req, res, next) => {
-    const protectedRoutes = ['/admin', '/dashboard'];
-    if (protectedRoutes.some(route => req.path.startsWith(route))) {
-        return verifyToken(req, res, next);
-    }
-    next();
-};
-
-app.use(protectedRoutesMiddleware);
-app.use(express.static(path.join(__dirname, "public"))); // Legacy line
-```
-
-Unknown use for this endpoint. Very sensitive, shows passwords in plain
-
-This exposes userid, username, email, contact, type, profile_pic_url, created_at. These can then tell malicious third parties who the admins are. Risk of vertical privilege escalation is increased. A demonstration of this vulnerability can be done by running ./exploit_demos/admin.py
+Resolution, create another middleware function to validate an admin token, see Endpoint 4 A1
 
 ### 11. GET /users/:id
+
+> :warning: **Warning:**: A4 (brief?): Since this endpoint can accept requests from anyone regardless of their userid, users can request for the user data of other users. Malicious threat actors can steal user data by making continuous requests to this endpoint and incrementing their id argument by 1 for each request.
+
+Exploit demo: ./exploit_demos/incremental_req.py
+
+Resolution: on server side check the user's token and decode it, and only use the userid that is provided in the user token. The parameter field can be modified and therefore cannot be trusted
+
+We see that the JWT token has already been included in the request so therefore no additions are needed for front end. However it would be useful if we removed the workflow of getting the userid from the local storage as we have decided that we would not trust the userid URL parameter, therefore this step would be rendered useless 
+```js
+// ./FrontEnd/public/userprofile.html
+
+var token = localStorage.getItem("JWT");
+    var userInfo = localStorage.getItem("User")
+    let userId = -1
+
+    function editUser() {
+        axios.get(`http://localhost:8081/users/${userId}`, {
+            headers: { 'authorization': 'Bearer ' + token }
+        }).then(({ data: userData }) => {
+            const { contact, email, profile_pic_url, username } = userData
+            $("#editUsername").val(username)
+            $("#editEmail").val(email)
+            $("#editContact").val(contact)
+            $("#editProfilePic").val(profile_pic_url)
+        }).catch((err) => console.log(err));
+    }
+```
+
+On the server side, we should check if the token is valid by simply adding the existing middleware to verify that any decoded data can be trusted and use only the userid from decoding this
+```js
+var verifyToken = require("../auth/verifyToken.js");
+
+app.get("/users/:id", verifyToken, (req, res) => {
+    // req.userid = decoded.userid
+    userDB.getUser(req.userid, (err, results) => {});
+});
+```
 ### 14. GET /category
 ### 16. GET /product/:id
 
@@ -173,7 +245,7 @@ Emotional damage
 1 UNION SELECT null, o.userid, o.cart, o.total, u.username, u.email, u.contact, u.password, u.type, u.profile_pic_url, i.table_name, i.table_schema FROM user u, INFORMATION_SCHEMA.TABLES i, orders o UNION SELECT null, null, null, null, null, null, null, null, null, p.productid, null, null FROM product p
 ```
 
-http://localhost:8081/product/8%20GROUP%20BY%20p.productid%20UNION%20SELECT%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20p.productid,%20table_schema,%20table_name%20FROM%20INFORMATION_SCHEMA.TABLES,%20product%20p
+http://localhost:8081/product/1%20UNION%20SELECT%20null,%20o.userid,%20o.cart,%20o.total,%20u.username,%20u.email,%20u.contact,%20u.password,%20u.type,%20u.profile_pic_url,%20i.table_name,%20i.table_schema%20FROM%20user%20u,%20INFORMATION_SCHEMA.TABLES%20i,%20orders%20o%20UNION%20SELECT%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20p.productid,%20null,%20null%20FROM%20product%20p
 ### 19. GET /product/:id/reviews
 > :warning: **Caution:** A3 (detailed, continued): No output sanitisation, risk is displaying stored XSS
 
@@ -186,7 +258,7 @@ http://localhost:8081/product/8%20GROUP%20BY%20p.productid%20UNION%20SELECT%20nu
 
 ### admin.html 
 
-> :info: **Information** A1 (continued): admin.html is protected by an inline script, however it exposes some admin endpoints as users can capture the page source and even render it. These admin endpoints should therefore not overlook any security
+> [!IMPORTANT] A1 (continued): admin.html is protected by an inline script, however it exposes some admin endpoints as users can capture the page source and even render it. These admin endpoints should therefore not overlook any security
 
 ## Cryptography 
 

@@ -60,14 +60,8 @@ const userDB = {
 			} else {
 				dbConn.query(`
 					SELECT 
-					u.userid, 
-					u.username, 
-					u.email, 
-					u.contact, 
-					u.type, 
-					u.profile_pic_url, 
-					u.created_at 
-					FROM user u 
+					u.userid, u.username, u.email, u.contact, 
+					u.type, u.profile_pic_url, u.created_at FROM user u 
 					WHERE u.userid = ?;`, 
 					[userid], 
 					function (err, results) {
