@@ -161,31 +161,22 @@ const productDB = {
 	},
 
 	updateProduct: (
-		name,
-		description,
-		categoryid,
-		brand,
-		price,
-		productid,
-		callback
+		name, description, categoryid,
+		brand, price, productid, callback
 	) => {
-		//Connects
 		var dbConn = db.getConnection();
 		dbConn.connect(function (err) {
-			//Return error
 			if (err) {
 				return callback(err, null);
 			} else {
-				//Sql query
 				dbConn.query(
-					`
-        Update product set 
-        name=?, 
-        description=?, 
-        categoryid=?, 
-        brand=?,
-        price=?
-        where productid=?;`,
+					`Update product set 
+					name=?, 
+					description=?, 
+					categoryid=?, 
+					brand=?,
+					price=?
+					where productid=?;`,
 					[name, description, categoryid, brand, price, productid],
 					function (err, results) {
 						//End connection

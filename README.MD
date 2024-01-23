@@ -15,7 +15,7 @@ Windows, ```./start.bat```
 What category does allowing -97 products fall under? Maybe 
 
 Categories of OWASP TOP 10 2021:
-A01 Broken Access Control (1/2)
+A01 Broken Access Control (2/2)
 A02 Cryptographic failure (2/2)
 A03 Injection (2/2)
 A04 Insecure Design 
@@ -43,8 +43,35 @@ SELECT, INSERT, both prepared.
 
 
 ### 4. PUT /product/:productid
+
+> :fire: **Critical** A1 (detailed): This is a highly sensitive endpoint that only users with the highest privilege should access. It has been found that all users with a valid token can successfully make a request to this endpoint
+
+Resolution, create another middleware function to validate an admin token (can just add a bool parameter to switch mode in verifytoken but a lot of calling changes)
+```js
+function verifyTokenAdmin(req, res, next) {
+    var token = req.headers['authorization']; 
+
+    if (!token || !token.includes('Bearer')) { 
+        res.status(403);
+		return res.send({ auth: 'false', message: 'Not authorized!' });
+    } else {
+        token = token.split('Bearer ')[1];
+        jwt.verify(token, config.key, function (err, decoded) { 
+            if (err || decoded.type != 'Admin') { // Add another condition: if not admin, HTTP 403
+                res.status(403);
+                return res.json({ auth: false, message: 'Not authorized!' });
+            } else {
+                req.userid = decoded.userid; //decode the userid and store in req for use
+                req.type = decoded.type; //decode the role and store in req for use
+                next();
+            }
+        });
+    }
+}
+```
+
 ### 5. DELETE /review/:reviewid
-> :fire: **Critical:** A3: SQLi 
+> :fire: **Critical:** A3 (brief2): SQLi 
 ### 12. PUT /users/:id
 ### 13. POST /category
 ### 15. POST /product
@@ -96,11 +123,9 @@ app.use(limiter);
 
 > :warning: **Warning:** A7 (detailed): No password policy is enforced, even if hashing (currently not implemented, see Cryptography section below) is implemented, the passwords can be cracked through rainbow tables. Another risk is the increased chance of a brute force attack if users use common passwords. See Endpoint 8 A7
 
-
-
 ### 10. GET /users
 
-> :fire: **Critical:** A1: Accessing API with missing access controls for POST, PUT and DELETE. This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. This exposes userid, username, email, contact, type, profile_pic_url, created_at. These even include the admin users and therefore VERTICAL PRIVILEGE ESCALATION
+> :fire: **Critical:** A1: Accessing API with missing access controls for POST, PUT and DELETE. This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. This exposes userid, username, email, contact, type, profile_pic_url, created_at. These even include the admin users and result in vertical privilege escalation
 > only for review.js, others are all jwt validated
 
 To view the admin page before it redirects
@@ -150,7 +175,7 @@ Blind sqli guessing the tables
 
 http://localhost:8081/product/8%20GROUP%20BY%20p.productid%20UNION%20SELECT%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20p.productid,%20table_schema,%20table_name%20FROM%20INFORMATION_SCHEMA.TABLES,%20product%20p
 ### 19. GET /product/:id/reviews
-> :warning: **Caution:** No output sanitisation, risk is displaying stored XSS
+> :warning: **Caution:** A3 (detailed, continued): No output sanitisation, risk is displaying stored XSS
 
 ### 21. GET /discount
 ### 22. GET /discount/:id
@@ -161,8 +186,7 @@ http://localhost:8081/product/8%20GROUP%20BY%20p.productid%20UNION%20SELECT%20nu
 
 ### admin.html 
 
-> :information: **Information** 
-admin.html is protected by an inline script, however it exposes some admin endpoints as users can capture the . These admin endpoints should therefore not overlook any security
+> :info: **Information** A1 (continued): admin.html is protected by an inline script, however it exposes some admin endpoints as users can capture the page source and even render it. These admin endpoints should therefore not overlook any security
 
 ## Cryptography 
 
