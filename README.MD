@@ -17,8 +17,8 @@ What category does allowing -97 products fall under? Maybe
 Categories of OWASP TOP 10 2021:
 A01 Broken Access Control (2/2)
 A02 Cryptographic failure (2/2)
-A03 Injection (2/2)
-A04 Insecure Design (1/2)
+A03 Injection (6/2)
+A04 Insecure Design (7/2)
 A07 Identification and Authentication failures (2/2)
 
 ## Endpoints
@@ -28,7 +28,7 @@ only some if statements to check data, no RWX
 ### 2. GET /order/:userid
 req.userid SELECT, SQL is prepared
 ### 3. POST /order
-Optional chaining 
+> [!INFORMATION] Optional chaining 
 ```
 object?.property
 ``` 
@@ -71,7 +71,6 @@ function verifyTokenAdmin(req, res, next) {
 ### 5. DELETE /review/:reviewid
 > :fire: **Critical:** A3 (brief2): SQLi 
 
-
 > [!WARNING]  A1 (detailed, continued): See A1 Endpoint 4. The impact of this broken access is that any user's reviews can be deleted
 
 Review id:
@@ -79,22 +78,35 @@ Review id:
 8 OR 1=1
 ```
 
-User id is decoded using JWT, unless the JWT can be forged, the user id cannot be changed
-
-Resolution is to use placeholders
-```js
-```
+User id is decoded using JWT, unless the JWT can be forged, the user id cannot be changed. Therefore the risk is somewhat low as the maximum risk is the user deleting all of their own reviews
 
 ### 12. PUT /users/:id
 
-
+> :warning: **Warning:**: A4 (detailed): This endpoint can accept requests from anyone with a valid token, while this endpoint was intended only for admins to use. Risk is high as other users can modify other user's information, including passwords
 
 ### 13. POST /category
+
+> :warning: **Warning:**: A4 (detailed): This endpoint can accept requests from anyone with a valid token, while this endpoint was intended only for admins to use. Risk is high as categories can be added and lead to XSS if they are displayed
+
 ### 15. POST /product
+
+> :warning: **Warning:**: A4 (detailed): This endpoint can accept requests from anyone with a valid token, while this endpoint was intended only for admins to use. Risk is high as registered users can post new products
+
 ### 17. DELETE /product/:id
+
+> :fire: **Critical:**: A4 (detailed): This endpoint can accept requests from anyone with a valid token, while this endpoint was intended only for admins to use. Risk is critical as registered users can delete products and risk the availability and all incoming business operations
+
 ### 18. POST /product/:id/review
+
+> [!Warning] A3 (brief3): SQLi. Has low risk due to nature of SQL statement.
+
 ### 20. POST /discount/:productid
+
+> :warning: **Warning:**: A4 (detailed): This endpoint can accept requests from anyone with a valid token, while this endpoint was intended only for admins to use.
+
 ### 23. POST /product/:id/image
+
+> :warning: **Warning:**: A4 (detailed): This endpoint can accept requests from anyone with a valid token, while this endpoint was intended only for admins to use.
 
 ### Without verifyToken middleware
 
@@ -184,7 +196,7 @@ if (!passwordValidator.test(password)) {
 
 ### 10. GET /users
 
-> :fire: **Critical:** A1 (brief, this doesnt have any middleware): Accessing API with missing access controls for POST, PUT and DELETE. This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. This exposes userid, username, email, contact, type, profile_pic_url, created_at. These even include the admin users and result in vertical privilege escalation.
+> :fire: **Critical:** A1 (detailed, this doesnt have any middleware): Accessing API with missing access controls for POST, PUT and DELETE. This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. This exposes userid, username, email, contact, type, profile_pic_url, created_at. These even include the admin users and result in vertical privilege escalation.
 
 To view the admin page before it redirects
 ```bash
@@ -199,7 +211,9 @@ Resolution, create another middleware function to validate an admin token, see E
 
 ### 11. GET /users/:id
 
-> :warning: **Warning:**: A4 (brief?): Since this endpoint can accept requests from anyone regardless of their userid, users can request for the user data of other users. Malicious threat actors can steal user data by making continuous requests to this endpoint and incrementing their id argument by 1 for each request.
+> :warning: **Warning:**: A4 (detailed): Since this endpoint can accept requests from anyone regardless of their userid, users can request for the user data of other users. Malicious threat actors can steal user data by making continuous requests to this endpoint and incrementing their id argument by 1 for each request.
+
+> [!Information] 2021:A04 - An insecure design cannot be fixed by a perfect implementation as by definition, needed security controls were never created to defend against specific attacks. This endpoint only contains the verifytoken middleware but it is not sufficient.
 
 Exploit demo: ./exploit_demos/incremental_req.py
 
@@ -245,7 +259,37 @@ Emotional damage
 1 UNION SELECT null, o.userid, o.cart, o.total, u.username, u.email, u.contact, u.password, u.type, u.profile_pic_url, i.table_name, i.table_schema FROM user u, INFORMATION_SCHEMA.TABLES i, orders o UNION SELECT null, null, null, null, null, null, null, null, null, p.productid, null, null FROM product p
 ```
 
+
+Resolution is to use placeholders
+```js
+// ./BackEnd/models/product.js
+getProduct: (productid, callback) => {
+    var dbConn = db.getConnection();
+    dbConn.connect(function (err) {
+        if (err) {
+            return callback(err, null);
+        } else {
+            dbConn.query(
+                `select p.productid, p.name, p.description, c.categoryid, category categoryname, p.brand, 
+                p.price, COUNT(distinct r.reviewid) reviewcount, 
+                pi.path imagepath, AVG( r.rating) rating, d.discountid, d.discount_percentage 
+                from product p join category c on c.categoryid = p.categoryid  
+                left join reviews r on r.productid = p.productid
+                left join productimages pi on pi.productid = p.productid 
+                left join discount d on d.productid = p.productid 
+                where p.productid = ?
+                GROUP BY p.productid`, [productid], 
+                function (err, results) {
+                    // ...
+                }
+            );
+        }
+    });
+},
+```
+
 http://localhost:8081/product/1%20UNION%20SELECT%20null,%20o.userid,%20o.cart,%20o.total,%20u.username,%20u.email,%20u.contact,%20u.password,%20u.type,%20u.profile_pic_url,%20i.table_name,%20i.table_schema%20FROM%20user%20u,%20INFORMATION_SCHEMA.TABLES%20i,%20orders%20o%20UNION%20SELECT%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20p.productid,%20null,%20null%20FROM%20product%20p
+S
 ### 19. GET /product/:id/reviews
 > :warning: **Caution:** A3 (detailed, continued): No output sanitisation, risk is displaying stored XSS
 
@@ -258,7 +302,7 @@ http://localhost:8081/product/1%20UNION%20SELECT%20null,%20o.userid,%20o.cart,%2
 
 ### admin.html 
 
-> [!IMPORTANT] A1 (continued): admin.html is protected by an inline script, however it exposes some admin endpoints as users can capture the page source and even render it. These admin endpoints should therefore not overlook any security
+> [!IMPORTANT] A1 (brief, continued): admin.html is protected by an inline script, however it exposes some admin endpoints as users can capture the page source and even render it. These admin endpoints should therefore not overlook any security
 
 ## Cryptography 
 
