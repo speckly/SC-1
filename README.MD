@@ -124,7 +124,7 @@ Has no token verification as this is to login.
 
 > :fire: **Critical** A7 (brief): Permits brute force or other automated attacks. Can lead to privilege escalation. Brute force success chance is also lowered due to weak password policy. See Endpoint 9 A7
 
-Resolution by adding a rate limiter
+Resolution by adding a rate limiter middleware
 ```bash
 npm install express-rate-limit
 ```
@@ -141,9 +141,7 @@ const limiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.',
 });
 
-// Apply the rate limiter to all requests
 app.use(limiter);
-
 ```
 
 ### 9. POST /users
@@ -200,8 +198,10 @@ if (!passwordValidator.test(password)) {
 
 To view the admin page before it redirects
 ```bash
-cutycapt --url=http://hostname:3001/admin.html --delay=200 --out=admin200.png
+cutycapt --url=http://$HOSTNAME:3001/admin.html --delay=200 --out=admin200.png
 ```
+![Admin page captured](./Screenshots/cutycapt_admin.png)
+
 
 To view the admin page source code to view endpoints. Here we use the requests module from python as we are only interested in reading the raw HTML source. Using a browser will execute it and therefore redirect us to the front page as we are not authenticated as an administrator
 ```bash
@@ -216,6 +216,11 @@ Resolution, create another middleware function to validate an admin token, see E
 > [!Information] 2021:A04 - An insecure design cannot be fixed by a perfect implementation as by definition, needed security controls were never created to defend against specific attacks. This endpoint only contains the verifytoken middleware but it is not sufficient.
 
 Exploit demo: ./exploit_demos/incremental_req.py
+
+```bash
+wfuzz -c -z range,1-100 --hw=0 http://$HOSTNAME:8081/users/FUZZ
+```
+![Using wfuzz](Screenshots/wfuzz_users.png)
 
 Resolution: on server side check the user's token and decode it, and only use the userid that is provided in the user token. The parameter field can be modified and therefore cannot be trusted
 
@@ -309,4 +314,3 @@ S
 > :warning: **Caution:** A2: All passwords stored in the mySQL instance are not hashed
 Confirmed to be classified as a vulnerability
 > :warning: **Caution:** A2: Uses HTTP protocol and is susceptible to MITM
-
