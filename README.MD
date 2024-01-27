@@ -2,17 +2,11 @@
 
 Application of code analysis and web penetration skills to ensure secure coding practices in a web project. The provided web project contains source codes that require thorough analysis. The task is to deploy and test the web application, review its source codes, and identify any potential security vulnerabilities.
 
-# TODO 
-
-Use tools
-
 # Usage
 
 Windows, ```./start.bat```
 
 # Notes 
-
-What category does allowing -97 products fall under? Maybe 
 
 Categories of OWASP TOP 10 2021:
 A01 Broken Access Control (2/2)
@@ -43,6 +37,11 @@ SELECT, INSERT, both prepared.
 ### 4. PUT /product/:productid
 
 > :fire: **Critical** A1 (detailed): This is a highly sensitive endpoint that only users with the highest privilege should access. It has been found that all users with a valid token can successfully make a request to this endpoint
+
+Exploit demo: 
+```bash
+python ./exploit_demos/updateProduct.py
+```
 
 Resolution, create another middleware function to validate an admin token (can just add a bool parameter to switch mode in verifytoken but a lot of calling changes)
 ```js
@@ -102,7 +101,7 @@ User id is decoded using JWT, unless the JWT can be forged, the user id cannot b
 
 ### 20. POST /discount/:productid
 
-> :warning: **Warning:**: A4 (detailed): This endpoint can accept requests from anyone with a valid token, while this endpoint was intended only for admins to use.
+Validated admin token this time.
 
 ### 23. POST /product/:id/image
 
@@ -178,7 +177,6 @@ if (!validator.isEmail(email)) {
 }
 ```
 
-
 > :warning: **Warning:** A7 (detailed): No password policy is enforced, even if hashing (currently not implemented, see Cryptography section below) is implemented, the passwords can be cracked through rainbow tables. Another risk is the increased chance of a brute force attack if users use common passwords. See Endpoint 8 A7
 
 To implement a password policy
@@ -202,7 +200,6 @@ cutycapt --url=http://$HOSTNAME:3001/admin.html --delay=200 --out=admin200.png
 ```
 ![Admin page captured](./Screenshots/cutycapt_admin.png)
 
-
 To view the admin page source code to view endpoints. Here we use the requests module from python as we are only interested in reading the raw HTML source. Using a browser will execute it and therefore redirect us to the front page as we are not authenticated as an administrator
 ```bash
 python ./exploit_demos/admin.py
@@ -215,7 +212,10 @@ Resolution, create another middleware function to validate an admin token, see E
 
 > [!Information] 2021:A04 - An insecure design cannot be fixed by a perfect implementation as by definition, needed security controls were never created to defend against specific attacks. This endpoint only contains the verifytoken middleware but it is not sufficient.
 
-Exploit demo: ./exploit_demos/incremental_req.py
+Exploit demo: 
+```bash
+python ./exploit_demos/incremental_req.py
+```
 
 ```bash
 wfuzz -c -z range,1-100 --hw=0 http://$HOSTNAME:8081/users/FUZZ
@@ -295,19 +295,27 @@ getProduct: (productid, callback) => {
 
 http://localhost:8081/product/1%20UNION%20SELECT%20null,%20o.userid,%20o.cart,%20o.total,%20u.username,%20u.email,%20u.contact,%20u.password,%20u.type,%20u.profile_pic_url,%20i.table_name,%20i.table_schema%20FROM%20user%20u,%20INFORMATION_SCHEMA.TABLES%20i,%20orders%20o%20UNION%20SELECT%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20p.productid,%20null,%20null%20FROM%20product%20p
 S
-### 19. GET /product/:id/reviews
+### 19. GET /product/:id/reviews 21. GET /discount 22. GET /discount/:id 24. GET /product/:id/image 25. GET /product/cheapest/:categoryid
 > :warning: **Caution:** A3 (detailed, continued): No output sanitisation, risk is displaying stored XSS
 
-### 21. GET /discount
-### 22. GET /discount/:id
-### 24. GET /product/:id/image
-### 25. GET /product/cheapest/:categoryid
+Unsure of the use for endpoint 25
 
 ## Pages
 
 ### admin.html 
 
 > [!IMPORTANT] A1 (brief, continued): admin.html is protected by an inline script, however it exposes some admin endpoints as users can capture the page source and even render it. These admin endpoints should therefore not overlook any security
+
+The resolution is to validate an admin token to determine access rights in the backend instead of the frontend.
+See Endpoint 4 A1 for ```verifyTokenAdmin``` middleware function
+```js
+// Serve admin.html only if the admin token is valid
+app.use('/admin', verifyTokenAdmin, (req, res) => {
+    res.sendFile(__dirname + "/public/admin/admin.html");
+});
+
+app.use(serveStatic(__dirname + "/public"));
+```
 
 ## Cryptography 
 
