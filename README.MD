@@ -32,11 +32,9 @@ SELECT, INSERT, both prepared.
 
 > :fire: **Critical:** A3 (detailed): Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS
 
-
-
 ### 4. PUT /product/:productid
 
-> :fire: **Critical** A1 (detailed): This is a highly sensitive endpoint that only users with the highest privilege should access. It has been found that all users with a valid token can successfully make a request to this endpoint
+> :fire: **Critical** A4 (detailed): This is a highly sensitive endpoint that only users with the highest privilege should access. It has been found that all users with a valid token can successfully make a request to this endpoint
 
 Exploit demo: 
 ```bash
@@ -192,7 +190,7 @@ if (!passwordValidator.test(password)) {
 
 ### 10. GET /users
 
-> :fire: **Critical:** A1 (detailed, this doesnt have any middleware): Accessing API with missing access controls for POST, PUT and DELETE. This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. This exposes userid, username, email, contact, type, profile_pic_url, created_at. These even include the admin users and result in vertical privilege escalation.
+> :fire: **Critical:** A1 (detailed, this doesnt have any middleware): This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. This exposes userid, username, email, contact, type, profile_pic_url, created_at. These even include the admin users and result in vertical privilege escalation.
 
 To view the admin page before it redirects
 ```bash
@@ -304,7 +302,7 @@ Unsure of the use for endpoint 25
 
 ### admin.html 
 
-> [!IMPORTANT] A1 (brief, continued): admin.html is protected by an inline script, however it exposes some admin endpoints as users can capture the page source and even render it. These admin endpoints should therefore not overlook any security
+> [!IMPORTANT] A1 (brief): admin.html is protected by an inline script, however it exposes some admin endpoints as users can capture the page source and even render it. These admin endpoints should therefore not overlook any security
 
 The resolution is to validate an admin token to determine access rights in the backend instead of the frontend.
 See Endpoint 4 A1 for ```verifyTokenAdmin``` middleware function
