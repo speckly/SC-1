@@ -1,28 +1,36 @@
 # ST2515: Secure Coding 2023/2024 Semester 2 Assignment 1
-
 Application of code analysis and web penetration skills to ensure secure coding practices in a web project. The provided web project contains source codes that require thorough analysis. The task is to deploy and test the web application, review its source codes, and identify any potential security vulnerabilities.
 
 # Usage
-
 Windows, ```./start.bat```
 
-# Notes 
+# Summary
+This application hardening exercise makes of a selection of 5 categories of OWASP TOP 10 2021 to audit.
 
-Categories of OWASP TOP 10 2021:
-A01 Broken Access Control (2/2)
-A02 Cryptographic failure (2/2)
-A03 Injection (6/2)
-A04 Insecure Design (7/2)
-A07 Identification and Authentication failures (2/2)
+### A01 Broken Access Control:
+Detailed: No access control put in place for endpoint 10, any requests, with or without token can get personal information from this endpoint
+Brief: Allowing of forced browsing to access admin.html, the page is served but shortly redirected back to landing page on authentication failure. This authentication is done on the client side.
+### A02 Cryptographic failure:
+Detailed: Passwords are stored in plaintext
+Brief: Uses HTTP protocol and is susceptible to MITM or session hijacking
+### A03 Injection
+Detailed: SQLi injection, endpoint 16 allows complete database dump, endpoint 5 allows code injection to allow deletion of reviews, endpoint 18 allows, code injection but has a low impact
+Brief: Inserted data is not validated, resulting in stored XSS, Endpoint 3, 9. No sanitisation on 25
+### A04 Insecure Design
+Detailed: Insecure token validation middleware does not deny access to sensitive endpoints that require admin tokens. Any request with a valid token can access these endpoints. Endpoint 3 (Operation Disruption), 4 (Data integrity), 5 (Partial DoS), 12 (User data integrity), 13 (low impact if not displayed), 15 (XSS), 17 (DoS), 23 (image integrity)
+Brief: Endpoint 11 accepts requests from anyone regardless of userid, and through brute force, attackers can get user information
+### A07 Identification and Authentication failures 
+Detailed: Endpoint 8 allows brute forced or automated attacks, which can lead to privilege escalation
+Brief: Endpoint 9 does not enforce any password policies, which can also lead to privilege escalation, even if cryptography is applied
 
 ## Endpoints
 
 ### 1. POST /user/isloggedin
-only some if statements to check data, no RWX
+Only some if statements to check data, no RWX operations,all good
 ### 2. GET /order/:userid
-req.userid SELECT, SQL is prepared
+Based on req.userid SELECT, SQL is prepared, all good
 ### 3. POST /order
-> [!INFORMATION] Optional chaining 
+> [!NOTE] Optional chaining 
 ```
 object?.property
 ``` 
@@ -68,7 +76,7 @@ function verifyTokenAdmin(req, res, next) {
 ### 5. DELETE /review/:reviewid
 > :fire: **Critical:** A3 (brief2): SQLi 
 
-> [!WARNING]  A1 (detailed, continued): See A1 Endpoint 4. The impact of this broken access is that any user's reviews can be deleted
+> [!WARNING]  A4 (detailed, continued): Similar. The impact of this broken access is that any user's reviews can be deleted
 
 Review id:
 ```sql
@@ -83,7 +91,7 @@ User id is decoded using JWT, unless the JWT can be forged, the user id cannot b
 
 ### 13. POST /category
 
-> :warning: **Warning:**: A4 (detailed): This endpoint can accept requests from anyone with a valid token, while this endpoint was intended only for admins to use. Risk is high as categories can be added and lead to XSS if they are displayed
+> :warning: **Warning:**: A4 (detailed): This endpoint can accept requests from anyone with a valid token, while this endpoint was intended only for admins to use. Risk is high as categories can be added and lead to XSS if they are displayed otherwise the risk is low
 
 ### 15. POST /product
 
@@ -144,7 +152,7 @@ app.use(limiter);
 ### 9. POST /users
 > :fire: **Critical:** A3 (detailed, continued): Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS. This username is displayed when the reviews pull the name and browser reflects it without output sanitization
 
-Resolution is to whitelist input, escape them from html characters and sanitise output in endpoints where it returns stored data. Can use the [Validator]() module 
+Resolution is to whitelist input, escape them from html characters and sanitise output in endpoints where it returns stored data. Can use the [Validator](https://www.npmjs.com/package/validator) module 
 ```bash
 npm install validator
 ```
@@ -206,7 +214,7 @@ Resolution, create another middleware function to validate an admin token, see E
 
 ### 11. GET /users/:id
 
-> :warning: **Warning:**: A4 (detailed): Since this endpoint can accept requests from anyone regardless of their userid, users can request for the user data of other users. Malicious threat actors can steal user data by making continuous requests to this endpoint and incrementing their id argument by 1 for each request.
+> :warning: **Warning:**: A4 (brief): Since this endpoint can accept requests from anyone regardless of their userid, users can request for the user data of other users. Malicious threat actors can steal user data by making continuous requests to this endpoint and incrementing their id argument by 1 for each request.
 
 > [!Information] 2021:A04 - An insecure design cannot be fixed by a perfect implementation as by definition, needed security controls were never created to defend against specific attacks. This endpoint only contains the verifytoken middleware but it is not sufficient.
 
@@ -319,4 +327,4 @@ app.use(serveStatic(__dirname + "/public"));
 
 > :warning: **Caution:** A2: All passwords stored in the mySQL instance are not hashed
 Confirmed to be classified as a vulnerability
-> :warning: **Caution:** A2: Uses HTTP protocol and is susceptible to MITM
+> :warning: **Caution:** A2: Uses HTTP protocol and is susceptible to MITM or session hijacking
