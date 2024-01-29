@@ -220,7 +220,7 @@ Resolution, create another middleware function to validate an admin token, see E
 
 Exploit demo: 
 ```bash
-python ./exploit_demos/incremental_req.py
+python ./exploit_demos/user_data.py
 ```
 
 ```bash
