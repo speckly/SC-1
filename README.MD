@@ -9,18 +9,45 @@ This application hardening exercise makes of a selection of 5 categories of OWAS
 
 ### A01 [Broken Access Control](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 Detailed: No access control put in place for endpoint 10, any requests, with or without token can get personal information from this endpoint
+Demo: 
+```bash
+python ./exploit_demos/user_data.py
+```
+
 Brief: Allowing of forced browsing to access admin.html, the page is served but shortly redirected back to landing page on authentication failure. This authentication is done on the client side.
+Demo: 
+```bash
+python ./exploit_demos/admin.py
+```
 ### [A02 Cryptographic failure](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
-Detailed: Passwords are stored in plaintext
+Detailed: No key rotation is implemented
 Brief: Uses HTTP protocol and is susceptible to MITM or session hijacking
+Demo: 
+```bash
+python ./exploit_demos/TODO
+```
 ### [A03 Injection]()
 Detailed: SQLi injection, endpoint 16 allows complete database dump, endpoint 5 allows code injection to allow deletion of reviews, endpoint 18 allows, code injection but has a low impact
 Brief: Inserted data is not validated, resulting in stored XSS, Endpoint 3, 9. No sanitisation on 25
 ### [A04 Insecure Design]()
 Detailed: Insecure token validation middleware does not deny access to sensitive endpoints that require admin tokens. Any request with a valid token can access these endpoints. Endpoint 3 (Operation Disruption), 4 (Data integrity), 5 (Partial DoS), 12 (User data integrity), 13 (low impact if not displayed), 15 (XSS), 17 (DoS), 23 (image integrity)
+Demo on endpoint 4: 
+```bash
+python ./exploit_demos/update_product.py
+```
+
 Brief: Endpoint 11 accepts requests from anyone regardless of userid, and through brute force, attackers can get user information
+Demo: 
+```bash
+python ./exploit_demos/user_data.py
+```
 ### [A07 Identification and Authentication failures]() 
 Detailed: Endpoint 8 allows brute forced or automated attacks, which can lead to privilege escalation
+Demo:
+```bash
+python ./exploit_demos/privilege_escalation.py
+```
+
 Brief: Endpoint 9 does not enforce any password policies, which can also lead to privilege escalation, even if cryptography is applied
 
 ## Endpoints
@@ -46,7 +73,7 @@ SELECT, INSERT, both prepared.
 
 Exploit demo: 
 ```bash
-python ./exploit_demos/updateProduct.py
+python ./exploit_demos/update_product.py
 ```
 
 Resolution, create another middleware function to validate an admin token (can just add a bool parameter to switch mode in verifytoken but a lot of calling changes)
@@ -128,6 +155,11 @@ Looks good, products are public view
 Has no token verification as this is to login. 
 
 > :fire: **Critical** A7 (brief): Permits brute force or other automated attacks. Can lead to privilege escalation. Brute force success chance is also lowered due to weak password policy. See Endpoint 9 A7
+
+Demo:
+```bash
+python ./exploit_demos/privilege_escalation.py
+```
 
 Resolution by adding a rate limiter middleware
 ```bash
