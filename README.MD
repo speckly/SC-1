@@ -7,19 +7,19 @@ Windows, ```./start.bat```
 # Summary
 This application hardening exercise makes of a selection of 5 categories of OWASP TOP 10 2021 to audit.
 
-### A01 Broken Access Control:
+### A01 [Broken Access Control](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 Detailed: No access control put in place for endpoint 10, any requests, with or without token can get personal information from this endpoint
 Brief: Allowing of forced browsing to access admin.html, the page is served but shortly redirected back to landing page on authentication failure. This authentication is done on the client side.
-### A02 Cryptographic failure:
+### [A02 Cryptographic failure](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 Detailed: Passwords are stored in plaintext
 Brief: Uses HTTP protocol and is susceptible to MITM or session hijacking
-### A03 Injection
+### [A03 Injection]()
 Detailed: SQLi injection, endpoint 16 allows complete database dump, endpoint 5 allows code injection to allow deletion of reviews, endpoint 18 allows, code injection but has a low impact
 Brief: Inserted data is not validated, resulting in stored XSS, Endpoint 3, 9. No sanitisation on 25
-### A04 Insecure Design
+### [A04 Insecure Design]()
 Detailed: Insecure token validation middleware does not deny access to sensitive endpoints that require admin tokens. Any request with a valid token can access these endpoints. Endpoint 3 (Operation Disruption), 4 (Data integrity), 5 (Partial DoS), 12 (User data integrity), 13 (low impact if not displayed), 15 (XSS), 17 (DoS), 23 (image integrity)
 Brief: Endpoint 11 accepts requests from anyone regardless of userid, and through brute force, attackers can get user information
-### A07 Identification and Authentication failures 
+### [A07 Identification and Authentication failures]() 
 Detailed: Endpoint 8 allows brute forced or automated attacks, which can lead to privilege escalation
 Brief: Endpoint 9 does not enforce any password policies, which can also lead to privilege escalation, even if cryptography is applied
 
@@ -325,6 +325,41 @@ app.use(serveStatic(__dirname + "/public"));
 
 ## Cryptography 
 
-> :warning: **Caution:** A2: All passwords stored in the mySQL instance are not hashed
-Confirmed to be classified as a vulnerability
+> :warning: **Caution:** A7 (extra): All passwords stored in the mySQL instance are not hashed
+Also related to A2: Cryptographic Failure, however according to [examples in A7](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures#Description), this vulnerability should be classified as A7. Modifications are required to workflows that handle passwords. In this example we use
+
+
+```js
+```
+> :warning: **Caution:** A2: Weak cryptographic key used for signing JWT tokens. The current configuration is that its value remains the same forever
+The solution is to export the variable secret as the return of a function that checks if it has been 90 days since the last key rotation based on a stored date, this function will return the current key being used for signing the JWT if the key has not expired. If it has expired, the function will destroy the current key, update the date of last key rotation and then replace the current key with a newly generated key, then also returns the newly generated key. HS256 is the [default algorithm](https://github.com/auth0/node-jsonwebtoken#user-content-usage) used by the JWT token signing function, and therefore we should use a key length of 32 bytes
+```js
+const crypto = require('crypto');
+
+function generateRandomKey(length) {
+    return crypto.randomBytes(length).toString('base64');
+}
+
+const rotationPeriodDays = 90;
+let lastRotationDate = new Date();
+let secret = generateRandomKey(32);
+
+function rotateKeyIfNeeded() {
+    const now = new Date();
+    const rotationThreshold = new Date(lastRotationDate.setDate(lastRotationDate.getDate() + rotationPeriodDays));
+
+    if (now >= rotationThreshold) {
+        secret = generateRandomKey(32);
+        lastRotationDate = now;
+    }
+}
+
+function getCurrentKey() {
+    rotateKeyIfNeeded();
+    return secret;
+}
+
+module.exports.getCurrentKey = getCurrentKey;
+```
+
 > :warning: **Caution:** A2: Uses HTTP protocol and is susceptible to MITM or session hijacking
