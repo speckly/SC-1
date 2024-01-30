@@ -25,6 +25,7 @@ const discountDB = require("../model/discount");
 const productImagesDB = require("../model/productimages");
 var verifyToken = require("../auth/verifyToken.js");
 const orderDB = require("../model/orders");
+const verifyTokenAdmin = require("../auth/verifyTokenAdmin.js");
 
 var app = express();
 app.options("*", cors());
@@ -181,7 +182,7 @@ app.post("/users", (req, res) => {
 });
 
 //Api no. 10 Endpoint: GET /users/ | Get all user
-app.get("/users", (req, res) => {
+app.get("/users", verifyTokenAdmin, (req, res) => {
     userDB.getAllUser((err, results) => {
         if (err) res.status(500).json({ result: "Internal Error" });
         //No error, response with all user info

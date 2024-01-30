@@ -2,7 +2,9 @@
 Application of code analysis and web penetration skills to ensure secure coding practices in a web project. The provided web project contains source codes that require thorough analysis. The task is to deploy and test the web application, review its source codes, and identify any potential security vulnerabilities.
 
 # Usage
-Windows, ```./start.bat```
+
+To run the vulnerable application, ```./Legacy/start.bat```
+To run the patched application, ```./start.bat```
 
 # Summary
 This application hardening exercise makes of a selection of 5 categories of OWASP TOP 10 2021 to audit.
@@ -28,6 +30,7 @@ python ./exploit_demos/TODO
 ```
 ### [A03 Injection]()
 Detailed: SQLi injection, endpoint 16 allows complete database dump, endpoint 5 allows code injection to allow deletion of reviews, endpoint 18 allows, code injection but has a low impact
+Demo: See endpoint
 Brief: Inserted data is not validated, resulting in stored XSS, Endpoint 3, 9. No sanitisation on 25
 ### [A04 Insecure Design]()
 Detailed: Insecure token validation middleware does not deny access to sensitive endpoints that require admin tokens. Any request with a valid token can access these endpoints. Endpoint 3 (Operation Disruption), 4 (Data integrity), 5 (Partial DoS), 12 (User data integrity), 13 (low impact if not displayed), 15 (XSS), 17 (DoS), 23 (image integrity)
@@ -57,6 +60,7 @@ Only some if statements to check data, no RWX operations,all good
 ### 2. GET /order/:userid
 Based on req.userid SELECT, SQL is prepared, all good
 ### 3. POST /order
+##### Status:
 > [!NOTE] Optional chaining 
 ```
 object?.property
@@ -68,7 +72,7 @@ SELECT, INSERT, both prepared.
 > :fire: **Critical:** A3 (detailed): Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS
 
 ### 4. PUT /product/:productid
-
+##### Status:
 > :fire: **Critical** A4 (detailed): This is a highly sensitive endpoint that only users with the highest privilege should access. It has been found that all users with a valid token can successfully make a request to this endpoint
 
 Exploit demo: 
@@ -101,6 +105,7 @@ function verifyTokenAdmin(req, res, next) {
 ```
 
 ### 5. DELETE /review/:reviewid
+##### Status:
 > :fire: **Critical:** A3 (brief2): SQLi 
 
 > [!WARNING]  A4 (detailed, continued): Similar. The impact of this broken access is that any user's reviews can be deleted
@@ -113,45 +118,42 @@ Review id:
 User id is decoded using JWT, unless the JWT can be forged, the user id cannot be changed. Therefore the risk is somewhat low as the maximum risk is the user deleting all of their own reviews
 
 ### 12. PUT /users/:id
-
+##### Status:
 > :warning: **Warning:**: A4 (detailed): This endpoint can accept requests from anyone with a valid token, while this endpoint was intended only for admins to use. Risk is high as other users can modify other user's information, including passwords
 
 ### 13. POST /category
-
+##### Status:
 > :warning: **Warning:**: A4 (detailed): This endpoint can accept requests from anyone with a valid token, while this endpoint was intended only for admins to use. Risk is high as categories can be added and lead to XSS if they are displayed otherwise the risk is low
 
 ### 15. POST /product
-
+##### Status:
 > :warning: **Warning:**: A4 (detailed): This endpoint can accept requests from anyone with a valid token, while this endpoint was intended only for admins to use. Risk is high as registered users can post new products
 
 ### 17. DELETE /product/:id
-
+##### Status:
 > :fire: **Critical:**: A4 (detailed): This endpoint can accept requests from anyone with a valid token, while this endpoint was intended only for admins to use. Risk is critical as registered users can delete products and risk the availability and all incoming business operations
 
 ### 18. POST /product/:id/review
-
+##### Status:
 > [!Warning] A3 (brief3): SQLi. Has low risk due to nature of SQL statement.
 
 ### 20. POST /discount/:productid
-
 Validated admin token this time.
 
 ### 23. POST /product/:id/image
-
+##### Status:
 > :warning: **Warning:**: A4 (detailed): This endpoint can accept requests from anyone with a valid token, while this endpoint was intended only for admins to use.
 
 ### Without verifyToken middleware
 
 ### 6. GET /product/brand/:brand
-
 Looks good, viewing by brand is not sensitive
 
 ### 7. GET /product
-
 Looks good, products are public view
 
 ### 8. POST /user/login
-
+##### Status:
 Has no token verification as this is to login. 
 
 > :fire: **Critical** A7 (brief): Permits brute force or other automated attacks. Can lead to privilege escalation. Brute force success chance is also lowered due to weak password policy. See Endpoint 9 A7
@@ -182,6 +184,7 @@ app.use(limiter);
 ```
 
 ### 9. POST /users
+##### Status:
 > :fire: **Critical:** A3 (detailed, continued): Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS. This username is displayed when the reviews pull the name and browser reflects it without output sanitization
 
 Resolution is to whitelist input, escape them from html characters and sanitise output in endpoints where it returns stored data. Can use the [Validator](https://www.npmjs.com/package/validator) module 
@@ -229,6 +232,7 @@ if (!passwordValidator.test(password)) {
 ```
 
 ### 10. GET /users
+##### Status: Resolved
 
 > :fire: **Critical:** A1 (detailed, this doesnt have any middleware): This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. This exposes userid, username, email, contact, type, profile_pic_url, created_at. These even include the admin users and result in vertical privilege escalation.
 
@@ -245,7 +249,7 @@ python ./exploit_demos/admin.py
 Resolution, create another middleware function to validate an admin token, see Endpoint 4 A1
 
 ### 11. GET /users/:id
-
+##### Status:
 > :warning: **Warning:**: A4 (brief): Since this endpoint can accept requests from anyone regardless of their userid, users can request for the user data of other users. Malicious threat actors can steal user data by making continuous requests to this endpoint and incrementing their id argument by 1 for each request.
 
 > [!Information] 2021:A04 - An insecure design cannot be fixed by a perfect implementation as by definition, needed security controls were never created to defend against specific attacks. This endpoint only contains the verifytoken middleware but it is not sufficient.
@@ -332,8 +336,8 @@ getProduct: (productid, callback) => {
 ```
 
 http://localhost:8081/product/1%20UNION%20SELECT%20null,%20o.userid,%20o.cart,%20o.total,%20u.username,%20u.email,%20u.contact,%20u.password,%20u.type,%20u.profile_pic_url,%20i.table_name,%20i.table_schema%20FROM%20user%20u,%20INFORMATION_SCHEMA.TABLES%20i,%20orders%20o%20UNION%20SELECT%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20p.productid,%20null,%20null%20FROM%20product%20p
-S
 ### 19. GET /product/:id/reviews 21. GET /discount 22. GET /discount/:id 24. GET /product/:id/image 25. GET /product/cheapest/:categoryid
+##### Status:
 > :warning: **Caution:** A3 (detailed, continued): No output sanitisation, risk is displaying stored XSS
 
 Unsure of the use for endpoint 25
@@ -341,13 +345,15 @@ Unsure of the use for endpoint 25
 ## Pages
 
 ### admin.html 
-
+##### Status: Resolved
 > [!IMPORTANT] A1 (brief): admin.html is protected by an inline script, however it exposes some admin endpoints as users can capture the page source and even render it. These admin endpoints should therefore not overlook any security
 
 The resolution is to validate an admin token to determine access rights in the backend instead of the frontend.
 See Endpoint 4 A1 for ```verifyTokenAdmin``` middleware function
 ```js
+// FrontEnd/server.js
 // Serve admin.html only if the admin token is valid
+
 app.use('/admin', verifyTokenAdmin, (req, res) => {
     res.sendFile(__dirname + "/public/admin/admin.html");
 });
@@ -360,9 +366,6 @@ app.use(serveStatic(__dirname + "/public"));
 > :warning: **Caution:** A7 (extra): All passwords stored in the mySQL instance are not hashed
 Also related to A2: Cryptographic Failure, however according to [examples in A7](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures#Description), this vulnerability should be classified as A7. Modifications are required to workflows that handle passwords. In this example we use
 
-
-```js
-```
 > :warning: **Caution:** A2: Weak cryptographic key used for signing JWT tokens. The current configuration is that its value remains the same forever
 The solution is to export the variable secret as the return of a function that checks if it has been 90 days since the last key rotation based on a stored date, this function will return the current key being used for signing the JWT if the key has not expired. If it has expired, the function will destroy the current key, update the date of last key rotation and then replace the current key with a newly generated key, then also returns the newly generated key. HS256 is the [default algorithm](https://github.com/auth0/node-jsonwebtoken#user-content-usage) used by the JWT token signing function, and therefore we should use a key length of 32 bytes
 ```js
