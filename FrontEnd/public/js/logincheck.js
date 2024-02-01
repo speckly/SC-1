@@ -38,7 +38,9 @@ $(document).ready(function () {
         error: function (xhr, textStatus, errorThrown) {
             $("#userprofile").hide()
             $("#logincontainer").hide()
-            $("#logoutcontainer").hide()
+            if (errorThrown == "Unauthorized") { // Meaning a user token is stuck in local storage and its useless
+                $("#logoutcontainer").show()
+            }
             $("#admin").hide()
         }
     })

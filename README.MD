@@ -15,14 +15,18 @@ Demo:
 ```bash
 python ./exploit_demos/user_data.py
 ```
+Status: resolved
 
 Brief: Allowing of forced browsing to access admin.html, the page is served but shortly redirected back to landing page on authentication failure. This authentication is done on the client side.
 Demo: 
 ```bash
 python ./exploit_demos/admin.py
 ```
+Status: resolved
 ### [A02 Cryptographic failure](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 Detailed: No key rotation is implemented
+Status: resolved
+
 Brief: Uses HTTP protocol and is susceptible to MITM or session hijacking
 Demo: 
 ```bash
@@ -30,7 +34,9 @@ python ./exploit_demos/TODO
 ```
 ### [A03 Injection]()
 Detailed: SQLi injection, endpoint 16 allows complete database dump, endpoint 5 allows code injection to allow deletion of reviews, endpoint 18 allows, code injection but has a low impact
-Demo: See endpoint
+Demo: See endpoint 16
+Status: resolved
+
 Brief: Inserted data is not validated, resulting in stored XSS, Endpoint 3, 9. No sanitisation on 25
 ### [A04 Insecure Design]()
 Detailed: Insecure token validation middleware does not deny access to sensitive endpoints that require admin tokens. Any request with a valid token can access these endpoints. Endpoint 3 (Operation Disruption), 4 (Data integrity), 5 (Partial DoS), 12 (User data integrity), 13 (low impact if not displayed), 15 (XSS), 17 (DoS), 23 (image integrity)
@@ -38,6 +44,7 @@ Demo on endpoint 4:
 ```bash
 python ./exploit_demos/update_product.py
 ```
+Status: resolved
 
 Brief: Endpoint 11 accepts requests from anyone regardless of userid, and through brute force, attackers can get user information
 Demo: 
@@ -52,6 +59,7 @@ python ./exploit_demos/privilege_escalation.py
 ```
 
 Brief: Endpoint 9 does not enforce any password policies, which can also lead to privilege escalation, even if cryptography is applied
+Status: resolved
 
 ## Endpoints
 
@@ -185,6 +193,9 @@ app.use(limiter);
 
 ### 9. POST /users
 ##### Status:
+
+> :warning: **Warning:** A7: No password hashing is implemented here
+
 > :fire: **Critical:** A3 (detailed, continued): Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS. This username is displayed when the reviews pull the name and browser reflects it without output sanitization
 
 Resolution is to whitelist input, escape them from html characters and sanitise output in endpoints where it returns stored data. Can use the [Validator](https://www.npmjs.com/package/validator) module 
@@ -236,20 +247,11 @@ if (!passwordValidator.test(password)) {
 
 > :fire: **Critical:** A1 (detailed, this doesnt have any middleware): This endpoint has no user validation, therefore anyone can view all users as long as they make a request to this endpoint. This exposes userid, username, email, contact, type, profile_pic_url, created_at. These even include the admin users and result in vertical privilege escalation.
 
-To view the admin page before it redirects
-```bash
-cutycapt --url=http://$HOSTNAME:3001/admin.html --delay=200 --out=admin200.png
-```
-![Admin page captured](./Screenshots/cutycapt_admin.png)
 
-To view the admin page source code to view endpoints. Here we use the requests module from python as we are only interested in reading the raw HTML source. Using a browser will execute it and therefore redirect us to the front page as we are not authenticated as an administrator
-```bash
-python ./exploit_demos/admin.py
-```
 Resolution, create another middleware function to validate an admin token, see Endpoint 4 A1
 
 ### 11. GET /users/:id
-##### Status:
+##### Status: Resolved
 > :warning: **Warning:**: A4 (brief): Since this endpoint can accept requests from anyone regardless of their userid, users can request for the user data of other users. Malicious threat actors can steal user data by making continuous requests to this endpoint and incrementing their id argument by 1 for each request.
 
 > [!Information] 2021:A04 - An insecure design cannot be fixed by a perfect implementation as by definition, needed security controls were never created to defend against specific attacks. This endpoint only contains the verifytoken middleware but it is not sufficient.
@@ -348,6 +350,17 @@ Unsure of the use for endpoint 25
 ##### Status: Resolved
 > [!IMPORTANT] A1 (brief): admin.html is protected by an inline script, however it exposes some admin endpoints as users can capture the page source and even render it. These admin endpoints should therefore not overlook any security
 
+To view the admin page before it redirects
+```bash
+cutycapt --url=http://$HOSTNAME:3001/admin.html --delay=200 --out=admin200.png
+```
+![Admin page captured](./Screenshots/cutycapt_admin.png)
+
+To view the admin page source code to view endpoints. Here we use the requests module from python as we are only interested in reading the raw HTML source. Using a browser will execute it and therefore redirect us to the front page as we are not authenticated as an administrator
+```bash
+python ./exploit_demos/admin.py
+```
+
 The resolution is to validate an admin token to determine access rights in the backend instead of the frontend.
 See Endpoint 4 A1 for ```verifyTokenAdmin``` middleware function
 ```js
@@ -361,40 +374,121 @@ app.use('/admin', verifyTokenAdmin, (req, res) => {
 app.use(serveStatic(__dirname + "/public"));
 ```
 
+Modify frontend on each page to dynamically include token when admins click on the button. Here we removed the href redirecting to HOSTNAME/admin.html. The script makes a GET request with the stored JWT token and if the backend validates the token to belong to an admin then it sends the admin.html file. Frontend will handle it and replace HTML document with the admin.html file. 
+```html
+<a class="nav-link" href="#" id="login_admin">Admin</a>
+
+<script>
+document.getElementById('login_admin').addEventListener('click', function() {
+    const token = localStorage.getItem('JWT');
+    if (token) {
+        const headers = { 'Authorization': 'Bearer ' + token };
+        fetch('admin.html', {
+            method: 'GET',
+            headers: headers,
+        }).then(response => {
+            window.location.href = 'admin.html';
+        }).catch(error => {
+            console.error('Error:', error);
+        });
+    } else { // Case where users try to be funny and unhide the admin button, without a token
+        window.location.href = 'login.html';
+    }
+});
+</script>
+
+```
+
 ## Cryptography 
 
 > :warning: **Caution:** A7 (extra): All passwords stored in the mySQL instance are not hashed
 Also related to A2: Cryptographic Failure, however according to [examples in A7](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures#Description), this vulnerability should be classified as A7. Modifications are required to workflows that handle passwords. In this example we use
 
 > :warning: **Caution:** A2: Weak cryptographic key used for signing JWT tokens. The current configuration is that its value remains the same forever
-The solution is to export the variable secret as the return of a function that checks if it has been 90 days since the last key rotation based on a stored date, this function will return the current key being used for signing the JWT if the key has not expired. If it has expired, the function will destroy the current key, update the date of last key rotation and then replace the current key with a newly generated key, then also returns the newly generated key. HS256 is the [default algorithm](https://github.com/auth0/node-jsonwebtoken#user-content-usage) used by the JWT token signing function, and therefore we should use a key length of 32 bytes
+#### Status: Resolved
+The solution is to export the variable secret as the return of a function that checks if it has been 90 days since the last key rotation based on a stored date, this function will return the current key being used for signing the JWT if the key has not expired. If it has expired, the function will destroy the current key, update the date of last key rotation and then replace the current key with a newly generated key, then also returns the newly generated key. HS256 is the [default algorithm](https://github.com/auth0/node-jsonwebtoken#user-content-usage) used by the JWT token signing function, and therefore we should use a key length of 32 bytes. 
+> [!NOTE] The key is now stored in ./secretKey.txt so please protect this secret ie. configure OS-level permissions, add to .gitignore
 ```js
+// ./BackEnd/config.js
+
 const crypto = require('crypto');
+const fs = require('fs');
+
+const keyFilePath = './secretKey.txt';
 
 function generateRandomKey(length) {
-    return crypto.randomBytes(length).toString('base64');
+    const buffer = crypto.randomBytes(length);
+    return buffer.toString('base64');
 }
 
 const rotationPeriodDays = 90;
-let lastRotationDate = new Date();
-let secret = generateRandomKey(32);
+let lastRotationDate;
+let secret;
 
 function rotateKeyIfNeeded() {
     const now = new Date();
-    const rotationThreshold = new Date(lastRotationDate.setDate(lastRotationDate.getDate() + rotationPeriodDays));
+    const rotationThreshold = new Date(lastRotationDate.getTime() + rotationPeriodDays * 24 * 60 * 60 * 1000);
 
-    if (now >= rotationThreshold) {
+    if (!lastRotationDate || now >= rotationThreshold) {
         secret = generateRandomKey(32);
         lastRotationDate = now;
+        const content = JSON.stringify({ secret, lastRotationDate });
+        fs.writeFileSync(keyFilePath, content, 'utf-8');
     }
 }
 
 function getCurrentKey() {
+    if (!secret || !lastRotationDate) {
+        try {
+            const content = fs.readFileSync(keyFilePath, 'utf-8');
+            const data = JSON.parse(content);
+            secret = String(data.secret);
+            lastRotationDate = new Date(data.lastRotationDate);
+        } catch (error) {
+            // If the file doesn't exist or there's an error reading it, generate a new key and store
+            secret = generateRandomKey(32);
+            lastRotationDate = new Date();
+            const content = JSON.stringify({ secret, lastRotationDate });
+            fs.writeFileSync(keyFilePath, content, 'utf-8');
+        }
+    }
+
     rotateKeyIfNeeded();
     return secret;
 }
 
 module.exports.getCurrentKey = getCurrentKey;
+
 ```
 
 > :warning: **Caution:** A2: Uses HTTP protocol and is susceptible to MITM or session hijacking
+
+# Minor modifications
+Commented out the hiding of logout container as it is needed for users to clear their local storage. It will happen when keys rotate and user tokens are thus invalidated
+```js
+$.ajax({
+    headers: { "authorization": "Bearer " + token },
+    url: "http://localhost:8081/user/isloggedin",
+    success: function (data, textStatus, xhr) {
+
+    },
+    error: function (xhr, textStatus, errorThrown) {
+        $("#userprofile").hide()
+        $("#logincontainer").hide()
+        // $("#logoutcontainer").hide()
+        $("#admin").hide()
+    }
+})
+```
+Removed preloader in admin.html as this is now replacing the HTML content of any page and the preloader will only block the content
+```html
+<!-- ***** Preloader Start ***** -->
+  <div id="preloader">
+    <div class="jumper">
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+  </div>
+  <!-- ***** Preloader End ***** -->
+```

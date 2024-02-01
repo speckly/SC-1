@@ -885,11 +885,11 @@
             </li>
 
             <li class="nav-item">
-              <a class="nav-link href="register.html">Register</a>
+              <a class="nav-link" href="register.html">Register</a>
             </li>
        
             <li class="nav-item" id="admin">
-              <a class="nav-link" href="admin.html" id="login">Admin</a>
+              <a class="nav-link" href="#" id="login_admin">Admin</a>
             </li>
             <li class="nav-item" id="logincontainer">
               <a class="nav-link" href="login.html" id="login">Login</a>
@@ -971,6 +971,41 @@
       </div>
     </div>
   </footer>
+  <script>
+    document.getElementById('login_admin').addEventListener('click', function() {
+    const token = localStorage.getItem('JWT');
+    if (token) {
+        // Attach the token to the headers
+        const headers = new Headers({
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'text/html', // Adjust content type as needed
+        });
+
+        // Fetch the 'admin.html' page with headers
+        fetch('admin.html', {
+            method: 'GET',
+            headers: headers,
+        })
+        .then(response => {
+            // Check if the response is successful (status code 200)
+            if (response.ok) {
+                return response.text();
+            } else {
+                throw new Error('Failed to fetch admin.html');
+            }
+        })
+        .then(html => {
+            // Inject the fetched HTML into the current page or replace the entire document
+            document.documentElement.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    } else { // Case where users try to be funny and unhide the admin button, without a token
+        window.location.href = 'login.html';
+    }
+});
+  </script>
 
 </body>
 

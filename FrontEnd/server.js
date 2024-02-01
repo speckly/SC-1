@@ -18,7 +18,7 @@ app.use(function (req, res, next) {
 });
 
 app.use('/admin.html', verifyTokenAdmin, (req, res) => {
-    res.sendFile(__dirname + "/public/admin/admin.html")
+    res.sendFile(__dirname + "/public/admin.html")
 });
 
 app.use(serveStatic(__dirname + "/public"));

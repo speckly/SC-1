@@ -9,13 +9,13 @@ var config = require('../config');
 
 function verifyTokenAdmin(req, res, next) {
     var token = req.headers['authorization']; 
-
+    console.log(token)
     if (!token || !token.includes('Bearer')) { 
         res.status(403);
 		return res.send({ auth: 'false', message: 'Not authorized!' });
     } else {
         token = token.split('Bearer ')[1];
-        jwt.verify(token, config.key, function (err, decoded) { 
+        jwt.verify(token, config.getCurrentKey(), function (err, decoded) { 
             console.log(decoded)
             if (err || decoded.type != 'Admin') { // Add another condition: if not admin, HTTP 403
                 res.status(403);

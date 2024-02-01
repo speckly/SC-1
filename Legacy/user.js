@@ -60,8 +60,14 @@ const userDB = {
 			} else {
 				dbConn.query(`
 					SELECT 
-					u.userid, u.username, u.email, u.contact, 
-					u.type, u.profile_pic_url, u.created_at FROM user u 
+					u.userid, 
+					u.username, 
+					u.email, 
+					u.contact, 
+					u.type, 
+					u.profile_pic_url, 
+					u.created_at 
+					FROM user u 
 					WHERE u.userid = ?;`, 
 					[userid], 
 					function (err, results) {
@@ -122,7 +128,7 @@ const userDB = {
 							token = jwt.sign({
 								userid: result[0].userid,
 								type: result[0].type,
-							}, config.getCurrentKey(), {
+							}, config.key, {
 								expiresIn: 86400 // Expires in 24 hours
 							});
 							return callback(null, result, token);

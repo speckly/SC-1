@@ -1,9 +1,12 @@
 var express = require("express");
 var bodyParser = require("body-parser");
 const fs = require("fs");
+var jwt = require('jsonwebtoken');
+var config = require('../config');
 const path = require("path");
 var cors = require("cors");
 const multer = require("multer");
+const rateLimit = require('express-rate-limit');
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, "./public/images/product");
@@ -39,13 +42,32 @@ app.use(bodyParser.json()); //Chunking for json POST
 app.use(express.static(path.join(__dirname, "../public/")));
 
 // 1 Get if user is logged in with correct token
-app.post("/user/isloggedin", verifyToken, (req, res) => {
-    if (req.body.userid == req.userid && req.body.type == req.type)
-        res.status(200).json({
-            userid: req.userid,
-            type: req.type,
+app.post("/user/isloggedin", (req, res) => {
+    var token = req.headers['authorization']; //retrieve authorization header's content
+
+    if (!token || !token.includes('Bearer')) { //process the token
+        res.status(401).json({ Message: "Not logged in" })
+        return
+    } else {
+        token = token.split('Bearer ')[1]; //obtain the token's value
+        //console.log(token);
+        jwt.verify(token, config.getCurrentKey(), function (err, decoded) { //verify token
+            if (err) {
+                res.status(401).json({ Message: "Not logged in" })
+                return
+            } else {
+                req.userid = decoded.userid; //decode the userid and store in req for use
+                req.type = decoded.type; //decode the role and store in req for use
+                if (req.body.userid == req.userid && req.body.type == req.type)
+                    res.status(200).json({
+                        userid: req.userid,
+                        type: req.type,
+                    });
+                else res.status(401).json({ Message: "Not logged in" });
+            }
         });
-    else res.status(401).json({ Message: "Not logged in" });
+    }
+    
 });
 
 // 2 Get order
@@ -158,6 +180,13 @@ app.post("/user/login", function (req, res) {
 // Api no. 9 Endpoint: POST /users/ | Add new user
 app.post("/users", (req, res) => {
     var { username, email, contact, password, profile_pic_url } = req.body;
+    const passwordValidator = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+
+    if (!passwordValidator.test(password)) {
+        return res.status(422).json({
+            message: "Password must contain at least 8 characters, including one letter and one digit.",
+        });
+    }
 
     if (!profile_pic_url) {
         profile_pic_url = "";
@@ -193,8 +222,8 @@ app.get("/users", verifyTokenAdmin, (req, res) => {
 });
 
 //Api no. 11 Endpoint: GET /users/:id/ | Get user by userid
-app.get("/users/:id", (req, res) => {
-    userDB.getUser(req.params.id, (err, results) => {
+app.get("/users/:id", verifyToken, (req, res) => {
+    userDB.getUser(req.userid, (err, results) => {
         if (err) res.status(500).json({ result: "Internal Error" });
         //No error, response with user info
         else {

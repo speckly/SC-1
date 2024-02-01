@@ -1,6 +1,4 @@
 @echo off
-cd .\FrontEnd
-start node server.js
+start node .\FrontEnd\server.js
 
-cd ..\BackEnd
-start node server.js
+start node .\BackEnd\server.js
