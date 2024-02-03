@@ -32,7 +32,6 @@ const productDB = {
 			if (err) {
 				return callback(err, null);
 			} else {
-				// (^・ω・^§)ﾉ
 				dbConn.query(
 					`select p.productid, p.name, p.description, c.categoryid, category categoryname, p.brand, p.price, COUNT(distinct r.reviewid) reviewcount, pi.path imagepath, AVG( r.rating) rating, d.discountid, d.discount_percentage
 					from product p
@@ -40,8 +39,8 @@ const productDB = {
 					left join reviews r on r.productid = p.productid
 					left join productimages pi on pi.productid = p.productid 
 					left join discount d on d.productid = p.productid 
-					where p.productid = ${productid}
-					GROUP BY p.productid`, [], 
+					where p.productid = ?
+					GROUP BY p.productid`, [productid], 
 					function (err, results) {
 						dbConn.end();
 						if (err) {

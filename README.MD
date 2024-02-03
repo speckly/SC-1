@@ -15,7 +15,7 @@ Demo:
 ```bash
 python ./exploit_demos/user_data.py
 ```
-Status: resolved
+Status: Resolved
 
 Brief: Allowing of forced browsing to access admin.html, the page is served but shortly redirected back to landing page on authentication failure. This authentication is done on the client side.
 Demo: 
@@ -35,22 +35,32 @@ python ./exploit_demos/TODO
 ### [A03 Injection]()
 Detailed: SQLi injection, endpoint 16 allows complete database dump, endpoint 5 allows code injection to allow deletion of reviews, endpoint 18 allows, code injection but has a low impact
 Demo: See endpoint 16
-Status: resolved
+Status: Resolved
 
-Brief: Inserted data is not validated, resulting in stored XSS, Endpoint 3, 9. No sanitisation on 25
+Brief: Inserted data is not validated, resulting in stored XSS, Endpoint 3, 9, 18
+Demo: Attempt from 
+```
+http://localhost:3001/register.html
+```
+See Endpoint 9
+Status: Resolved
+
+Extra: No output sanitisation resulting in existing stored XSS displaying
+Status: Unresolved because I was paid to only find two vulnerabilities per category
 ### [A04 Insecure Design]()
 Detailed: Insecure token validation middleware does not deny access to sensitive endpoints that require admin tokens. Any request with a valid token can access these endpoints. Endpoint 3 (Operation Disruption), 4 (Data integrity), 5 (Partial DoS), 12 (User data integrity), 13 (low impact if not displayed), 15 (XSS), 17 (DoS), 23 (image integrity)
 Demo on endpoint 4: 
 ```bash
 python ./exploit_demos/update_product.py
 ```
-Status: resolved
+Status: Resolved
 
 Brief: Endpoint 11 accepts requests from anyone regardless of userid, and through brute force, attackers can get user information
 Demo: 
 ```bash
 python ./exploit_demos/user_data.py
 ```
+Status: Resolved
 ### [A07 Identification and Authentication failures]() 
 Detailed: Endpoint 8 allows brute forced or automated attacks, which can lead to privilege escalation
 Demo:
@@ -59,7 +69,7 @@ python ./exploit_demos/privilege_escalation.py
 ```
 
 Brief: Endpoint 9 does not enforce any password policies, which can also lead to privilege escalation, even if cryptography is applied
-Status: resolved
+Status: Resolved
 
 ## Endpoints
 
@@ -78,6 +88,7 @@ This operator allows you to safely access properties of an object without causin
 SELECT, INSERT, both prepared. 
 
 > :fire: **Critical:** A3 (detailed): Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS
+See endpoint 9 A3 (detailed)
 
 ### 4. PUT /product/:productid
 ##### Status:
@@ -143,6 +154,8 @@ User id is decoded using JWT, unless the JWT can be forged, the user id cannot b
 
 ### 18. POST /product/:id/review
 ##### Status:
+> :fire: **Critical:** A3 (detailed): Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS
+See Endpoint 9 A3 (brief)
 > [!Warning] A3 (brief3): SQLi. Has low risk due to nature of SQL statement.
 
 ### 20. POST /discount/:productid
@@ -194,31 +207,18 @@ app.use(limiter);
 ### 9. POST /users
 ##### Status:
 
-> :warning: **Warning:** A7: No password hashing is implemented here
+> :warning: **Warning:** A7 (extra): No password hashing is implemented here
 
 > :fire: **Critical:** A3 (detailed, continued): Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS. This username is displayed when the reviews pull the name and browser reflects it without output sanitization
 
-Resolution is to whitelist input, escape them from html characters and sanitise output in endpoints where it returns stored data. Can use the [Validator](https://www.npmjs.com/package/validator) module 
-```bash
-npm install validator
-```
-Example of escaping:
-```js
-const validator = require('validator');
+Demo: Visit ```http://localhost:3001/register.html```
+Create a user with a username of a XSS payload
+![Registering with XSS Attack](./Screenshots/register_xss.png)
+Insert a review as the user and refresh the page. The review will be displayed, including the username
+![Stored XSS Attack being displayed](./Screenshots/display_xss.png)
 
-// Api no. 9 Endpoint: POST /users/ | Add new user
-app.post("/users", (req, res) => {
-    //...
-    username = validator.escape(username);
-    email = validator.escape(email);
-    contact = validator.escape(contact);
-    userDB.addNewUser(
-        username, email, contact, password, "Customer", profile_pic_url,
-        //...
-    );
-});
-```
-Example of whitelisting:
+Resolutions: 
+1. Whitelist input, escape them from html characters and sanitise output in endpoints where it returns stored data. Can use the [Validator](https://www.npmjs.com/package/validator) module
 ```js
 const validator = require('validator');
 
@@ -227,6 +227,22 @@ if (!validator.isEmail(email)) {
     res.status(422).json({ message: "Invalid email address" });
     return;
 }
+```
+2 (implemented). Input sanitisation, it is easier to implement as whitelisting will result in input being rejected and giving us extra work on the front end. Input sanitisation provides the same mitigation against a XSS attack:
+```js
+const createDOMPurify = require('dompurify');
+const { JSDOM } = require('jsdom');
+
+const window = new JSDOM('').window;
+const DOMPurify = createDOMPurify(window);
+
+app.post("/order", verifyToken, (req, res) => {
+    const { cart, total } = req.body;
+
+    const sanitizedCart = DOMPurify.sanitize(cart);
+    const sanitizedTotal = DOMPurify.sanitize(total);
+    // ...
+});
 ```
 
 > :warning: **Warning:** A7 (detailed): No password policy is enforced, even if hashing (currently not implemented, see Cryptography section below) is implemented, the passwords can be cracked through rainbow tables. Another risk is the increased chance of a brute force attack if users use common passwords. See Endpoint 8 A7
@@ -264,7 +280,7 @@ python ./exploit_demos/user_data.py
 ```bash
 wfuzz -c -z range,1-100 --hw=0 http://$HOSTNAME:8081/users/FUZZ
 ```
-![Using wfuzz](Screenshots/wfuzz_users.png)
+![Using wfuzz](./Screenshots/wfuzz_users.png)
 
 Resolution: on server side check the user's token and decode it, and only use the userid that is provided in the user token. The parameter field can be modified and therefore cannot be trusted
 
@@ -340,7 +356,7 @@ getProduct: (productid, callback) => {
 http://localhost:8081/product/1%20UNION%20SELECT%20null,%20o.userid,%20o.cart,%20o.total,%20u.username,%20u.email,%20u.contact,%20u.password,%20u.type,%20u.profile_pic_url,%20i.table_name,%20i.table_schema%20FROM%20user%20u,%20INFORMATION_SCHEMA.TABLES%20i,%20orders%20o%20UNION%20SELECT%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20p.productid,%20null,%20null%20FROM%20product%20p
 ### 19. GET /product/:id/reviews 21. GET /discount 22. GET /discount/:id 24. GET /product/:id/image 25. GET /product/cheapest/:categoryid
 ##### Status:
-> :warning: **Caution:** A3 (detailed, continued): No output sanitisation, risk is displaying stored XSS
+> :warning: **Caution:** A3 (extra): No output sanitisation, risk is displaying stored XSS
 
 Unsure of the use for endpoint 25
 

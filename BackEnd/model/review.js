@@ -7,11 +7,11 @@ const reviewDB = {
 			if (err) {
 				return callback(err, null)
 			} else {
-				// OWASP TOP 10!!!
 				dbConn.query(`
 					insert into reviews
 					(userid, rating, review, productid)
-					values(${userid}, ${rating}, '${review}', ${productid});`, [], 
+					values(?, ?, ?, ?);`, 
+					[userid, rating, review, productid], 
 					function (err, results) {
 						dbConn.end();
 						if (err) {
@@ -53,9 +53,8 @@ const reviewDB = {
 			if (err) {
 				return callback(err, null)
 			} else {
-				// (^・ω・^§)ﾉ
-				dbConn.query(`delete from reviews where reviewid = ${reviewid} and userid = ${userid};`, 
-				[], function (err, results) {
+				dbConn.query(`delete from reviews where reviewid = ? and userid = ?;`, 
+				[reviewid, userid], function (err, results) {
 						dbConn.end();
 						if (err) {
 							console.log(err)

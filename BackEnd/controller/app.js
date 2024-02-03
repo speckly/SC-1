@@ -1,12 +1,16 @@
+// Author: Ritchie Yapp && SP School of Computing
+// https://github.com/speckly
+
 var express = require("express");
 var bodyParser = require("body-parser");
 const fs = require("fs");
 var jwt = require('jsonwebtoken');
-var config = require('../config');
 const path = require("path");
 var cors = require("cors");
 const multer = require("multer");
 const rateLimit = require('express-rate-limit');
+const createDOMPurify = require('dompurify');
+const { JSDOM } = require('jsdom');
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, "./public/images/product");
@@ -19,6 +23,8 @@ const storage = multer.diskStorage({
     },
 });
 const upload = multer({ storage: storage });
+const window = new JSDOM('').window;
+const DOMPurify = createDOMPurify(window);
 
 var userDB = require("../model/user");
 const categoryDB = require("../model/category");
@@ -29,6 +35,7 @@ const productImagesDB = require("../model/productimages");
 var verifyToken = require("../auth/verifyToken.js");
 const orderDB = require("../model/orders");
 const verifyTokenAdmin = require("../auth/verifyTokenAdmin.js");
+var config = require('../config');
 
 var app = express();
 app.options("*", cors());
@@ -86,7 +93,9 @@ app.get("/order/:userid", verifyToken, (req, res) => {
 app.post("/order", verifyToken, (req, res) => {
     const { cart, total } = req.body;
 
-    orderDB.addOrder(req.userid, cart, total, (err, results) => {
+    const sanitisedCart = DOMPurify.sanitize(cart);
+    const sanitisedTotal = DOMPurify.sanitize(total);
+    orderDB.addOrder(req.userid, sanitisedCart, sanitisedTotal, (err, results) => {
         if (err) {
             if (err?.message) {
                 res.status(400).json({ message: err?.message });
@@ -191,8 +200,13 @@ app.post("/users", (req, res) => {
     if (!profile_pic_url) {
         profile_pic_url = "";
     }
+    const sanitisedUsername = DOMPurify.sanitize(username);
+    const sanitisedEmail = DOMPurify.sanitize(email);
+    const sanitisedContact = DOMPurify.sanitize(contact);
+    const sanitisedPassword = DOMPurify.sanitize(password);
+    const sanitisedPic = DOMPurify.sanitize(profile_pic_url);
     userDB.addNewUser(
-        username, email, contact, password, "Customer", profile_pic_url,
+        sanitisedUsername, sanitisedEmail, sanitisedContact, sanitisedPassword, "Customer", sanitisedPic,
         (err, results) => {
             if (err) {
                 //Check if name or email is dup"
@@ -336,7 +350,11 @@ app.delete("/product/:id", verifyToken, (req, res) => {
 //Api no. 18 Endpoint: POST /product/:id/review/ | Add review
 app.post("/product/:id/review/", verifyToken, (req, res) => {
     const { userid, rating, review } = req.body;
-    reviewDB.addReview(userid, rating, review, req.params.id, (err, results) => {
+    const sanitisedID = DOMPurify.sanitize(userid);
+    const sanitisedRating = DOMPurify.sanitize(rating);
+    const sanitisedReview = DOMPurify.sanitize(review);
+
+    reviewDB.addReview(sanitisedID, sanitisedRating, sanitisedReview, req.params.id, (err, results) => {
         if (err) res.status(500).json({ result: "Internal Error" });
         //No error, response with reviewid
         else res.status(201).json({ reviewid: results.insertId });
