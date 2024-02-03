@@ -25,6 +25,11 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 const window = new JSDOM('').window;
 const DOMPurify = createDOMPurify(window);
+const limiter = rateLimit({
+    windowMs: 20 * 1000, // 20 seconds
+    max: 5, // 5 reqs per 20 seconds
+});
+  
 
 var userDB = require("../model/user");
 const categoryDB = require("../model/category");
@@ -37,15 +42,14 @@ const orderDB = require("../model/orders");
 const verifyTokenAdmin = require("../auth/verifyTokenAdmin.js");
 var config = require('../config');
 
-var app = express();
+var app = express()
+var urlencodedParser = bodyParser.urlencoded({ extended: false });
 app.options("*", cors());
 app.use(cors());
-var urlencodedParser = bodyParser.urlencoded({ extended: false });
-
 app.use(urlencodedParser);
-app.use(bodyParser.json()); //Chunking for json POST
+app.use(bodyParser.json()); 
+app.use(limiter);
 
-//Middleware
 app.use(express.static(path.join(__dirname, "../public/")));
 
 // 1 Get if user is logged in with correct token

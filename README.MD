@@ -67,6 +67,8 @@ Demo:
 ```bash
 python ./exploit_demos/privilege_escalation.py
 ```
+Alternatively you can just spam click the login button and view the Network panel in the browser
+Status: Resolved
 
 Brief: Endpoint 9 does not enforce any password policies, which can also lead to privilege escalation, even if cryptography is applied
 Status: Resolved
@@ -364,7 +366,7 @@ Unsure of the use for endpoint 25
 
 ### admin.html 
 ##### Status: Resolved
-> [!IMPORTANT] A1 (brief): admin.html is protected by an inline script, however it exposes some admin endpoints as users can capture the page source and even render it. These admin endpoints should therefore not overlook any security
+> [!WARNING] A1 (brief): admin.html is protected by an inline script, however it exposes some admin endpoints as users can capture the page source and even render it. These admin endpoints should therefore not overlook any security
 
 To view the admin page before it redirects
 ```bash
