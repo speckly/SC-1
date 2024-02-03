@@ -75,6 +75,7 @@ python ./exploit_demos/privilege_escalation.py
 ```
 Alternatively you can just spam click the login button and view the Network panel in the browser
 Status: Resolved
+> ![WARNING] This causes Frontend to be stuck in the preloader should the rate limiter be triggered. This is because Frontend does not handle HTTP 429. Users will be confused by this. (i was not paid enough to fix frontend)
 
 Brief: Endpoint 9 does not enforce any password policies, which can also lead to privilege escalation, even if cryptography is applied
 Status: Resolved

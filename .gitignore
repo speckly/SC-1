@@ -2,6 +2,8 @@ detailedExample.pdf
 /Legacy/Store.sql
 AssignmentAY2324S2.docx
 secretKey.txt
-*/__pycache__
 cert.pem
 key.pem
+.env
+**/node_modules
+**/__pycache__

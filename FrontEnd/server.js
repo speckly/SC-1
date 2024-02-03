@@ -3,6 +3,7 @@ const serveStatic = require('serve-static');
 const verifyTokenAdmin = require('../BackEnd/auth/verifyTokenAdmin');
 const https = require('https');
 const fs = require('fs');
+require('dotenv').config();
 
 const app = express();
 const httpPort = 3001;
@@ -40,7 +41,7 @@ app.use(serveStatic(__dirname + "/public"));
 const options = {
     key: fs.readFileSync('./key.pem'),
     cert: fs.readFileSync('./cert.pem'),
-    passphrase: 'fluffy'
+    passphrase: process.env.PASSPHRASE
 };
 
 const server = https.createServer(options, app);
