@@ -1,5 +1,7 @@
 detailedExample.pdf
-Store.sql
+/Legacy/Store.sql
 AssignmentAY2324S2.docx
 secretKey.txt
 */__pycache__
+cert.pem
+key.pem

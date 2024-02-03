@@ -26,8 +26,8 @@ const upload = multer({ storage: storage });
 const window = new JSDOM('').window;
 const DOMPurify = createDOMPurify(window);
 const limiter = rateLimit({
-    windowMs: 20 * 1000, // 20 seconds
-    max: 5, // 5 reqs per 20 seconds
+    windowMs: 10 * 1000, // 20 seconds
+    max: 5, // 5 reqs per 10 seconds
 });
   
 

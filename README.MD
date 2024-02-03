@@ -1,8 +1,14 @@
 # ST2515: Secure Coding 2023/2024 Semester 2 Assignment 1
 Application of code analysis and web penetration skills to ensure secure coding practices in a web project. The provided web project contains source codes that require thorough analysis. The task is to deploy and test the web application, review its source codes, and identify any potential security vulnerabilities.
+> [!WARNING] This repository is created only for learning purpose. Do not deploy to a live server as there are vulnerabilities in both applications (i was not paid enough to fix everything)
 
 # Usage
 
+If you are running the patched application, in the root folder, create two files ```cert.pem``` and ```key.pem```
+```bash
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
+```
+These two files are secret and therefore should never be shared out. These files are not required for the vulnerable application
 To run the vulnerable application, ```./Legacy/start.bat```
 To run the patched application, ```./start.bat```
 
@@ -479,7 +485,32 @@ module.exports.getCurrentKey = getCurrentKey;
 
 ```
 
-> :warning: **Caution:** A2: Uses HTTP protocol and is susceptible to MITM or session hijacking
+> :warning: **Caution:** A2 (brief): Uses HTTP protocol and is susceptible to MITM or session hijacking
+
+Resolution, transition from HTTP to HTTPS by including a self signed certificate and updating the server configurations for both Frontend and Backend:
+```js
+const express = require('express');
+const https = require('https');
+const fs = require('fs');
+
+const app = express();
+const PORT = 3031;
+
+const options = {
+    key: fs.readFileSync('key.pem'),
+    cert: fs.readFileSync('cert.pem'),
+};
+
+app.use((req, res, next) => {
+    if (req.secure) {
+        next();
+    } else {
+        res.redirect(`https://${req.headers.host}${req.url}`);
+    }
+});
+
+```
+
 
 # Minor modifications
 Commented out the hiding of logout container as it is needed for users to clear their local storage. It will happen when keys rotate and user tokens are thus invalidated

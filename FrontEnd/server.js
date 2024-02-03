@@ -1,11 +1,24 @@
-const express = require('express'); 
+const express = require('express');
 const serveStatic = require('serve-static');
-const verifyTokenAdmin = require('../BackEnd/auth/verifyTokenAdmin')
+const verifyTokenAdmin = require('../BackEnd/auth/verifyTokenAdmin');
+const https = require('https');
+const fs = require('fs');
 
-var hostname = "0.0.0.0";
-var port = 3001;
+const app = express();
+const httpPort = 3001;
+const httpsPort = 3002;
+HOSTNAME = "0.0.0.0";
 
-var app = express();
+// Middleware to redirect HTTP to HTTPS
+app.use((req, res, next) => {
+    if (!req.secure) {
+        url_https = `https://${req.headers.host.replace(/:\d+$/, `:${httpsPort}`)}${req.url}`
+        console.log(url_https)
+        return res.redirect(url_https);
+    }
+    next();
+});
+
 
 app.use(function (req, res, next) {
     if (req.method != "GET") {
@@ -18,11 +31,30 @@ app.use(function (req, res, next) {
 });
 
 app.use('/admin.html', verifyTokenAdmin, (req, res) => {
-    res.sendFile(__dirname + "/public/admin.html")
+    res.sendFile(__dirname + "/public/admin.html");
 });
 
 app.use(serveStatic(__dirname + "/public"));
 
-app.listen(port, hostname, function () {
-    console.log(`Server hosted at http://${hostname}:${port}`);
+// HTTPS configuration
+const options = {
+    key: fs.readFileSync('./key.pem'),
+    cert: fs.readFileSync('./cert.pem'),
+    passphrase: 'fluffy'
+};
+
+const server = https.createServer(options, app);
+server.listen(httpsPort, () => {
+    console.log(`HTTPS server hosted at https://${HOSTNAME}:${httpsPort}`);
+});
+
+// Create HTTP server for redirection
+const httpServer = express();
+httpServer.use((req, res) => {
+    url_https = `https://${req.headers.host.replace(/:\d+$/, `:${httpsPort}`)}${req.url}`
+    return res.redirect(url_https);
+});
+
+httpServer.listen(httpPort, () => {
+    console.log(`HTTP server hosted at http://${HOSTNAME}:${httpPort}`);
 });
