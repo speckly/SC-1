@@ -31,14 +31,11 @@ python ./exploit_demos/admin.py
 ```
 Status: resolved
 ### [A02 Cryptographic failure](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
-Detailed: No key rotation is implemented
+Brief: No key rotation is implemented
 Status: resolved
 
-Brief: Uses HTTP protocol and is susceptible to MITM or session hijacking
-Demo: 
-```bash
-python ./exploit_demos/TODO
-```
+Detailed: Uses HTTP protocol and is susceptible to MITM or session hijacking
+Demo: Use Wireshark
 ### [A03 Injection]()
 Detailed: SQLi injection, endpoint 16 allows complete database dump, endpoint 5 allows code injection to allow deletion of reviews, endpoint 18 allows, code injection but has a low impact
 Demo: See endpoint 16
@@ -497,6 +494,8 @@ module.exports.getCurrentKey = getCurrentKey;
 ```
 
 > :warning: **Caution:** A2 (brief): Uses HTTP protocol and is susceptible to MITM or session hijacking
+Using Wireshark, we can view packets on the same network and then steal this JWT token
+![shork hijacking](/Screenshots/session_hijacking.png)
 > [!INFORMATION] 
 > This fix may throw a (Mixed Content)[https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content] Error depending on the browser used as backend is in HTTP and frontend is in HTTPS. For demonstration purposes, this protection is turned off
 
