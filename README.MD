@@ -367,7 +367,8 @@ getProduct: (productid, callback) => {
 
 ### 19. GET /product/:id/reviews 21. GET /discount 22. GET /discount/:id 24. GET /product/:id/image 25. GET /product/cheapest/:categoryid
 ##### Status:
-> :warning: **Caution:** A3 (extra): No output sanitisation, risk is displaying stored XSS
+> [!WARNING]
+> A3 (extra): No output sanitisation, risk is displaying stored XSS
 
 Unsure of the use for endpoint 25
 
