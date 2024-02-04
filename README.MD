@@ -204,13 +204,12 @@ const rateLimit = require('express-rate-limit');
 
 const app = express();
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.',
+const password_limiter = rateLimit({
+    windowMs: 5 * 60 * 1000, // 10 minutes
+    max: 5, // 5 reqs per 10 minutes
 });
 
-app.use(limiter);
+app.post("/user/login", password_limiter, function (req, res) {})
 ```
 
 ### 9. POST /users

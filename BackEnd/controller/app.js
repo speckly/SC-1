@@ -25,13 +25,9 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 const window = new JSDOM('').window;
 const DOMPurify = createDOMPurify(window);
-const limiter = rateLimit({
-    windowMs: 10 * 1000, // 10 seconds
-    max: 40, // 40 reqs per 10 seconds
-});
 const password_limiter = rateLimit({
-    windowMs: 10 * 1000, // 10 seconds
-    max: 5, // 5 reqs per 10 seconds
+    windowMs: 5 * 60 * 1000, // 10 minutes
+    max: 5, // 5 reqs per 10 minutes
 });
 
 var userDB = require("../model/user");
