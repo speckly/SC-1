@@ -1,6 +1,7 @@
 # ST2515: Secure Coding 2023/2024 Semester 2 Assignment 1
 Application of code analysis and web penetration skills to ensure secure coding practices in a web project. The provided web project contains source codes that require thorough analysis. The task is to deploy and test the web application, review its source codes, and identify any potential security vulnerabilities.
-> [!WARNING] This repository is created only for learning purpose. Do not deploy to a live server as there are vulnerabilities in both applications (i was not paid enough to fix everything)
+> [!WARNING]
+> This repository is created only for learning purpose. Do not deploy to a live server as there are vulnerabilities in both applications (i was not paid enough to fix everything)
 
 # Usage
 
@@ -8,7 +9,7 @@ If you are running the patched application, in the root folder, create two files
 ```bash
 openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
 ```
-These two files are secret and therefore should never be shared out. These files are not required for the vulnerable application
+These two files are secret and therefore should never be shared out. These files are not required for the vulnerable application.
 To run the vulnerable application, ```./Legacy/start.bat```
 To run the patched application, ```./start.bat```
 
@@ -75,7 +76,7 @@ python ./exploit_demos/privilege_escalation.py
 ```
 Alternatively you can just spam click the login button and view the Network panel in the browser
 Status: Resolved
-> ![WARNING] This causes Frontend to be stuck in the preloader should the rate limiter be triggered. This is because Frontend does not handle HTTP 429. Users will be confused by this. (i was not paid enough to fix frontend)
+> ![WARNING] This causes frontend to be stuck in the preloader should the rate limiter be triggered. This is because frontend does not handle HTTP 429. Users will be confused by this. (i was not paid enough to fix frontend)
 
 Brief: Endpoint 9 does not enforce any password policies, which can also lead to privilege escalation, even if cryptography is applied
 Status: Resolved
@@ -136,7 +137,8 @@ function verifyTokenAdmin(req, res, next) {
 ##### Status:
 > :fire: **Critical:** A3 (brief2): SQLi 
 
-> [!WARNING]  A4 (detailed, continued): Similar. The impact of this broken access is that any user's reviews can be deleted
+> [!WARNING] 
+> A4 (detailed, continued): Similar. The impact of this broken access is that any user's reviews can be deleted
 
 Review id:
 ```sql
@@ -165,7 +167,8 @@ User id is decoded using JWT, unless the JWT can be forged, the user id cannot b
 ##### Status:
 > :fire: **Critical:** A3 (detailed): Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS
 See Endpoint 9 A3 (brief)
-> [!Warning] A3 (brief3): SQLi. Has low risk due to nature of SQL statement.
+> [!Warning] 
+> A3 (brief3): SQLi. Has low risk due to nature of SQL statement.
 
 ### 20. POST /discount/:productid
 Validated admin token this time.
@@ -279,7 +282,8 @@ Resolution, create another middleware function to validate an admin token, see E
 ##### Status: Resolved
 > :warning: **Warning:**: A4 (brief): Since this endpoint can accept requests from anyone regardless of their userid, users can request for the user data of other users. Malicious threat actors can steal user data by making continuous requests to this endpoint and incrementing their id argument by 1 for each request.
 
-> [!Information] 2021:A04 - An insecure design cannot be fixed by a perfect implementation as by definition, needed security controls were never created to defend against specific attacks. This endpoint only contains the verifytoken middleware but it is not sufficient.
+> [!INFORMATION]
+> 2021:A04 - An insecure design cannot be fixed by a perfect implementation as by definition, needed security controls were never created to defend against specific attacks. This endpoint only contains the verifytoken middleware but it is not sufficient.
 
 Exploit demo: 
 ```bash
@@ -328,11 +332,10 @@ app.get("/users/:id", verifyToken, (req, res) => {
 
 > :fire: **Critical:** A3 (brief): SQLi. The risk is the confidientiality of all information stored in the store's MySQL instance
 
-Emotional damage
+[Now, that's a lot of damage!](http://localhost:8081/product/1%20UNION%20SELECT%20null,%20o.userid,%20o.cart,%20o.total,%20u.username,%20u.email,%20u.contact,%20u.password,%20u.type,%20u.profile_pic_url,%20i.table_name,%20i.table_schema%20FROM%20user%20u,%20INFORMATION_SCHEMA.TABLES%20i,%20orders%20o%20UNION%20SELECT%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20p.productid,%20null,%20null%20FROM%20product%20p)
 ```sql
 1 UNION SELECT null, o.userid, o.cart, o.total, u.username, u.email, u.contact, u.password, u.type, u.profile_pic_url, i.table_name, i.table_schema FROM user u, INFORMATION_SCHEMA.TABLES i, orders o UNION SELECT null, null, null, null, null, null, null, null, null, p.productid, null, null FROM product p
 ```
-
 
 Resolution is to use placeholders
 ```js
@@ -362,7 +365,6 @@ getProduct: (productid, callback) => {
 },
 ```
 
-http://localhost:8081/product/1%20UNION%20SELECT%20null,%20o.userid,%20o.cart,%20o.total,%20u.username,%20u.email,%20u.contact,%20u.password,%20u.type,%20u.profile_pic_url,%20i.table_name,%20i.table_schema%20FROM%20user%20u,%20INFORMATION_SCHEMA.TABLES%20i,%20orders%20o%20UNION%20SELECT%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20p.productid,%20null,%20null%20FROM%20product%20p
 ### 19. GET /product/:id/reviews 21. GET /discount 22. GET /discount/:id 24. GET /product/:id/image 25. GET /product/cheapest/:categoryid
 ##### Status:
 > :warning: **Caution:** A3 (extra): No output sanitisation, risk is displaying stored XSS
@@ -373,7 +375,8 @@ Unsure of the use for endpoint 25
 
 ### admin.html 
 ##### Status: Resolved
-> [!WARNING] A1 (brief): admin.html is protected by an inline script, however it exposes some admin endpoints as users can capture the page source and even render it. These admin endpoints should therefore not overlook any security
+> [!WARNING]
+> A1 (brief): admin.html is protected by an inline script, however it exposes some admin endpoints as users can capture the page source and even render it. These admin endpoints should therefore not overlook any security
 
 To view the admin page before it redirects
 ```bash
@@ -399,7 +402,7 @@ app.use('/admin', verifyTokenAdmin, (req, res) => {
 app.use(serveStatic(__dirname + "/public"));
 ```
 
-Modify frontend on each page to dynamically include token when admins click on the button. Here we removed the href redirecting to HOSTNAME/admin.html. The script makes a GET request with the stored JWT token and if the backend validates the token to belong to an admin then it sends the admin.html file. Frontend will handle it and replace HTML document with the admin.html file. 
+Modify frontend on each page to dynamically include token when admins click on the button. Here we removed the href redirecting to HOSTNAME/admin.html. The script makes a GET request with the stored JWT token and if the backend validates the token to belong to an admin then it sends the admin.html file. frontend will handle it and replace HTML document with the admin.html file. 
 ```html
 <a class="nav-link" href="#" id="login_admin">Admin</a>
 
@@ -431,6 +434,12 @@ Also related to A2: Cryptographic Failure, however according to [examples in A7]
 
 > :warning: **Caution:** A2: Weak cryptographic key used for signing JWT tokens. The current configuration is that its value remains the same forever
 #### Status: Resolved
+
+This poses the following risks:
+1. Increased Exposure to Compromise: Over time, cryptographic algorithms and key lengths may become vulnerable to attacks due to advancements in computing power and cryptographic analysis. If keys are not rotated regularly, the risk of compromise increases as attackers have more time to exploit weaknesses.
+2. Long-term Exposure to Stolen Keys: If a key is compromised or accidentally exposed, not rotating the key means that the compromised key can be used to access sensitive data indefinitely. Key rotation limits the window of opportunity for attackers to misuse a stolen key.
+3. Compliance Issues: Many regulatory standards and compliance frameworks require organisations to implement key management practices, including key rotation. Failure to comply with these standards can result in legal consequences, fines, or the loss of business certifications.
+
 The solution is to export the variable secret as the return of a function that checks if it has been 90 days since the last key rotation based on a stored date, this function will return the current key being used for signing the JWT if the key has not expired. If it has expired, the function will destroy the current key, update the date of last key rotation and then replace the current key with a newly generated key, then also returns the newly generated key. HS256 is the [default algorithm](https://github.com/auth0/node-jsonwebtoken#user-content-usage) used by the JWT token signing function, and therefore we should use a key length of 32 bytes. 
 > [!NOTE] The key is now stored in ./secretKey.txt so please protect this secret ie. configure OS-level permissions, add to .gitignore
 ```js
@@ -487,8 +496,10 @@ module.exports.getCurrentKey = getCurrentKey;
 ```
 
 > :warning: **Caution:** A2 (brief): Uses HTTP protocol and is susceptible to MITM or session hijacking
+> [!INFORMATION] 
+> This fix may throw a (Mixed Content)[https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content] Error depending on the browser used as backend is in HTTP and frontend is in HTTPS. For demonstration purposes, this protection is turned off
 
-Resolution, transition from HTTP to HTTPS by including a self signed certificate and updating the server configurations for both Frontend and Backend:
+Resolution, transition from HTTP to HTTPS by including a self signed certificate and updating the server configurations for both frontend and backend:
 ```js
 const express = require('express');
 const https = require('https');
@@ -542,3 +553,6 @@ Removed preloader in admin.html as this is now replacing the HTML content of any
   </div>
   <!-- ***** Preloader End ***** -->
 ```
+
+In ```./FrontEnd/public/```
+Replaced all occurrences of "http://localhost:3001" to "https://localhost:3002"

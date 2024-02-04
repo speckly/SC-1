@@ -26,10 +26,13 @@ const upload = multer({ storage: storage });
 const window = new JSDOM('').window;
 const DOMPurify = createDOMPurify(window);
 const limiter = rateLimit({
-    windowMs: 10 * 1000, // 20 seconds
+    windowMs: 10 * 1000, // 10 seconds
+    max: 40, // 40 reqs per 10 seconds
+});
+const password_limiter = rateLimit({
+    windowMs: 10 * 1000, // 10 seconds
     max: 5, // 5 reqs per 10 seconds
 });
-  
 
 var userDB = require("../model/user");
 const categoryDB = require("../model/category");
@@ -48,7 +51,7 @@ app.options("*", cors());
 app.use(cors());
 app.use(urlencodedParser);
 app.use(bodyParser.json()); 
-app.use(limiter);
+// app.use(limiter);
 
 app.use(express.static(path.join(__dirname, "../public/")));
 
@@ -167,7 +170,7 @@ app.get("/product", (req, res) => {
 });
 
 // 8 login
-app.post("/user/login", function (req, res) {
+app.post("/user/login", password_limiter, function (req, res) {
     var username = req.body.username;
     var password = req.body.password;
 
