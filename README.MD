@@ -71,7 +71,7 @@ Demo:
 ```bash
 python ./exploit_demos/privilege_escalation.py
 ```
-Alternatively you can just spam click the login button and view the Network panel in the browser
+Spam click the login button and view the Network panel in the browser
 Status: Resolved
 > ![WARNING] This causes frontend to be stuck in the preloader should the rate limiter be triggered. This is because frontend does not handle HTTP 429. Users will be confused by this. (i was not paid enough to fix frontend)
 
@@ -499,7 +499,7 @@ Using Wireshark, we can view packets on the same network and then steal this JWT
 > [!INFORMATION] 
 > This fix may throw a (Mixed Content)[https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content] Error depending on the browser used as backend is in HTTP and frontend is in HTTPS. For demonstration purposes, this protection is turned off
 
-Resolution, transition from HTTP to HTTPS by including a self signed certificate and updating the server configurations for both frontend and backend:
+Resolution, transition from HTTP to HTTPS by including a self signed certificate and updating the server configurations for both frontend and backend, and redirect HTTP port to HTTPS port:
 ```js
 const express = require('express');
 const https = require('https');
