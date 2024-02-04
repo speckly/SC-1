@@ -500,27 +500,50 @@ Using Wireshark, we can view packets on the same network and then steal this JWT
 > This fix may throw a (Mixed Content)[https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content] Error depending on the browser used as backend is in HTTP and frontend is in HTTPS. For demonstration purposes, this protection is turned off
 
 Resolution, transition from HTTP to HTTPS by including a self signed certificate and updating the server configurations for both frontend and backend, and redirect HTTP port to HTTPS port:
+To create the certificate:
+```bash
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
+```
+Then update server configurations and redirect
 ```js
 const express = require('express');
 const https = require('https');
 const fs = require('fs');
 
 const app = express();
-const PORT = 3031;
+const httpPort = 3001;
+const httpsPort = 3002;
+
+// Middleware to redirect HTTP to HTTPS
+app.use((req, res, next) => {
+    if (!req.secure) {
+        url_https = `https://${req.headers.host.replace(/:\d+$/, `:${httpsPort}`)}${req.url}`
+        console.log(url_https)
+        return res.redirect(url_https);
+    }
+    next();
+});
 
 const options = {
     key: fs.readFileSync('key.pem'),
     cert: fs.readFileSync('cert.pem'),
 };
 
-app.use((req, res, next) => {
-    if (req.secure) {
-        next();
-    } else {
-        res.redirect(`https://${req.headers.host}${req.url}`);
-    }
+const server = https.createServer(options, app);
+server.listen(httpsPort, () => {
+    console.log(`HTTPS server hosted at https://${HOSTNAME}:${httpsPort}`);
 });
 
+// Create HTTP server for redirection
+const httpServer = express();
+httpServer.use((req, res) => {
+    url_https = `https://${req.headers.host.replace(/:\d+$/, `:${httpsPort}`)}${req.url}`
+    return res.redirect(url_https);
+});
+
+httpServer.listen(httpPort, () => {
+    console.log(`HTTP server hosted at http://${HOSTNAME}:${httpPort}`);
+});
 ```
 
 
