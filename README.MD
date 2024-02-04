@@ -74,7 +74,6 @@ python ./exploit_demos/privilege_escalation.py
 ```
 Spam click the login button and view the Network panel in the browser
 Status: Resolved
-> ![WARNING] This causes frontend to be stuck in the preloader should the rate limiter be triggered. This is because frontend does not handle HTTP 429. Users will be confused by this. (i was not paid enough to fix frontend)
 
 Brief: Endpoint 9 does not enforce any password policies, which can also lead to privilege escalation, even if cryptography is applied
 Status: Resolved
@@ -187,7 +186,7 @@ Looks good, products are public view
 ##### Status:
 Has no token verification as this is to login. 
 
-> :fire: **Critical** A7 (brief): Permits brute force or other automated attacks. Can lead to privilege escalation. Brute force success chance is also lowered due to weak password policy. See Endpoint 9 A7
+> :fire: **Critical** A7 (brief): Permits brute force or other automated attacks due to a lack of rate-limiting. Can lead to privilege escalation. Brute force success chance is also lowered due to weak password policy. See Endpoint 9 A7
 
 Demo:
 ```bash
@@ -219,7 +218,7 @@ app.use(limiter);
 
 > :warning: **Warning:** A7 (extra): No password hashing is implemented here
 
-> :fire: **Critical:** A3 (detailed, continued): Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS. This username is displayed when the reviews pull the name and browser reflects it without output sanitization
+> :fire: **Critical:** A3 (detailed, continued): Inserted data is not validated, and html elements can be stored in the database, potentially resulting in stored XSS. This username is displayed when the reviews pull the name and browser reflects it without output sanitization
 
 Demo: Visit ```http://localhost:3001/register.html```
 Create a user with a username of a XSS payload
@@ -256,6 +255,11 @@ app.post("/order", verifyToken, (req, res) => {
 ```
 
 > :warning: **Warning:** A7 (detailed): No password policy is enforced, even if hashing (currently not implemented, see Cryptography section below) is implemented, the passwords can be cracked through rainbow tables. Another risk is the increased chance of a brute force attack if users use common passwords. See Endpoint 8 A7
+
+Demo:
+```bash
+python ./exploit_demos/privilege_escalation.py
+```
 
 To implement a password policy
 ```js
