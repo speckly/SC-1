@@ -31,11 +31,12 @@ python ./exploit_demos/admin.py
 ```
 Status: resolved
 ### [A02 Cryptographic failure](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
-Brief: No key rotation is implemented
-Status: resolved
-
 Detailed: Uses HTTP protocol and is susceptible to MITM or session hijacking
 Demo: Use Wireshark
+Status: resolved
+
+Brief: No key rotation is implemented
+Status: resolved
 ### [A03 Injection]()
 Detailed: SQLi injection, endpoint 16 allows complete database dump, endpoint 5 allows code injection to allow deletion of reviews, endpoint 18 allows, code injection but has a low impact
 Demo: See endpoint 16
@@ -59,7 +60,7 @@ python ./exploit_demos/update_product.py
 ```
 Status: Resolved
 
-Brief: Endpoint 11 accepts requests from anyone regardless of userid, and through brute force, attackers can get user information
+Brief: Endpoint 11 accepts requests from anyone regardless of userid, and through incremental guessing, attackers can get user information
 Demo: 
 ```bash
 python ./exploit_demos/user_data.py
@@ -132,7 +133,7 @@ function verifyTokenAdmin(req, res, next) {
 
 ### 5. DELETE /review/:reviewid
 ##### Status:
-> :fire: **Critical:** A3 (brief2): SQLi 
+> :fire: **Critical:** A3 (detailed, continued): SQLi 
 
 > [!WARNING] 
 > A4 (detailed, continued): Similar. The impact of this broken access is that any user's reviews can be deleted
@@ -305,13 +306,8 @@ var token = localStorage.getItem("JWT");
     function editUser() {
         axios.get(`http://localhost:8081/users/${userId}`, {
             headers: { 'authorization': 'Bearer ' + token }
-        }).then(({ data: userData }) => {
-            const { contact, email, profile_pic_url, username } = userData
-            $("#editUsername").val(username)
-            $("#editEmail").val(email)
-            $("#editContact").val(contact)
-            $("#editProfilePic").val(profile_pic_url)
-        }).catch((err) => console.log(err));
+        })
+        // ...
     }
 ```
 
@@ -330,6 +326,7 @@ app.get("/users/:id", verifyToken, (req, res) => {
 > :fire: **Critical:** A3 (brief): SQLi. The risk is the confidientiality of all information stored in the store's MySQL instance
 
 [Now, that's a lot of damage!](http://localhost:8081/product/1%20UNION%20SELECT%20null,%20o.userid,%20o.cart,%20o.total,%20u.username,%20u.email,%20u.contact,%20u.password,%20u.type,%20u.profile_pic_url,%20i.table_name,%20i.table_schema%20FROM%20user%20u,%20INFORMATION_SCHEMA.TABLES%20i,%20orders%20o%20UNION%20SELECT%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20p.productid,%20null,%20null%20FROM%20product%20p)
+![Damage](Screenshots/sqli.png)
 ```sql
 1 UNION SELECT null, o.userid, o.cart, o.total, u.username, u.email, u.contact, u.password, u.type, u.profile_pic_url, i.table_name, i.table_schema FROM user u, INFORMATION_SCHEMA.TABLES i, orders o UNION SELECT null, null, null, null, null, null, null, null, null, p.productid, null, null FROM product p
 ```
@@ -497,7 +494,7 @@ module.exports.getCurrentKey = getCurrentKey;
 Using Wireshark, we can view packets on the same network and then steal this JWT token
 ![shork hijacking](/Screenshots/session_hijacking.png)
 > [!INFORMATION] 
-> This fix may throw a (Mixed Content)[https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content] Error depending on the browser used as backend is in HTTP and frontend is in HTTPS. For demonstration purposes, this protection is turned off
+> This fix may throw a [Mixed Content](https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content) Error depending on the browser used as backend is in HTTP and frontend is in HTTPS. For demonstration purposes, this protection is turned off
 
 Resolution, transition from HTTP to HTTPS by including a self signed certificate and updating the server configurations for both frontend and backend, and redirect HTTP port to HTTPS port:
 To create the certificate:
