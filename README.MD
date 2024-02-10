@@ -16,7 +16,7 @@ To run the patched application, ```./start.bat```
 # Summary
 This application hardening exercise makes of a selection of 5 categories of OWASP TOP 10 2021 to audit.
 
-### A01 [Broken Access Control](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+### [A01 Broken Access Control](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 Detailed: No access control put in place for endpoint 10, any requests, with or without token can get personal information from this endpoint
 Demo: 
 ```bash
