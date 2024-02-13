@@ -194,6 +194,15 @@ Demo:
 ```
 [click here for free data!!!](http://localhost:8081/product/1%20UNION%20SELECT%20null,%20o.userid,%20o.cart,%20o.total,%20u.username,%20u.email,%20u.contact,%20u.password,%20u.type,%20u.profile_pic_url,%20i.table_name,%20i.table_schema%20FROM%20user%20u,%20INFORMATION_SCHEMA.TABLES%20i,%20orders%20o%20UNION%20SELECT%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20p.productid,%20null,%20null%20FROM%20product%20p)
 
+Resolution:
+```js
+dbConn.query(
+					`insert into product 
+					(name, description, categoryid, brand, price)
+					values(?, ?, ?, ?, ?);`,
+					[name, description, categoryid, brand, price]
+)
+```
 [Brief](#9-post-users): Inserted data is not validated, resulting in stored XSS, Endpoint 3, 9, 18
 No vulnerable code, there is just a lack of validation
 Demo: Attempt from 
