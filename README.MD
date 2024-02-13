@@ -267,19 +267,14 @@ wfuzz -c -z range,1-100 --hw=0 http://speck.ly:8081/users/FUZZ
 ![Using wfuzz](./Screenshots/wfuzz_users.png)
 Resolution: on server side check the user's token and decode it, and only use the userid that is provided in the user token. The parameter field can be modified and therefore cannot be trusted
 ```js
-// ./FrontEnd/public/userprofile.html
+var verifyToken = require("../auth/verifyToken.js");
 
-var token = localStorage.getItem("JWT");
-    var userInfo = localStorage.getItem("User")
-    let userId = -1
-
-    function editUser() {
-        axios.get(`http://localhost:8081/users/${userId}`, {
-            headers: { 'authorization': 'Bearer ' + token }
-        })
-        // ...
-    }
+app.get("/users/:id", verifyToken, (req, res) => {
+    // req.userid = decoded.userid
+    userDB.getUser(req.userid, (err, results) => {});
+});
 ```
+
 ### [A07 Identification and Authentication failures]() 
 [Detailed](#8-post-userlogin): Endpoint 8 allows brute forced or automated attacks, which can lead to privilege escalation
 Demo:
