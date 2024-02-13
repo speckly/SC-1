@@ -58,7 +58,7 @@ Demo:
 python ./exploit_demos/admin.py
 ```
 ```bash
-cutycapt --url=http://$HOSTNAME:3001/admin.html --delay=200 --out=admin200.png
+cutycapt --url=http://speck.ly:3001/admin.html --delay=200 --out=admin200.png
 ```
 Resolution:
 ```js
@@ -262,7 +262,7 @@ Demo:
 python ./exploit_demos/user_data.py
 ```
 ```bash
-wfuzz -c -z range,1-100 --hw=0 http://$HOSTNAME:8081/users/FUZZ
+wfuzz -c -z range,1-100 --hw=0 http://speck.ly:8081/users/FUZZ
 ```
 ![Using wfuzz](./Screenshots/wfuzz_users.png)
 Resolution: on server side check the user's token and decode it, and only use the userid that is provided in the user token. The parameter field can be modified and therefore cannot be trusted
@@ -533,7 +533,7 @@ python ./exploit_demos/user_data.py
 ```
 
 ```bash
-wfuzz -c -z range,1-100 --hw=0 http://$HOSTNAME:8081/users/FUZZ
+wfuzz -c -z range,1-100 --hw=0 http://speck.ly:8081/users/FUZZ
 ```
 ![Using wfuzz](./Screenshots/wfuzz_users.png)
 
@@ -617,7 +617,7 @@ Unsure of the use for endpoint 25
 
 To view the admin page before it redirects
 ```bash
-cutycapt --url=http://$HOSTNAME:3001/admin.html --delay=200 --out=admin200.png
+cutycapt --url=http://speck.ly:3001/admin.html --delay=200 --out=admin200.png
 ```
 ![Admin page captured](./Screenshots/cutycapt_admin.png)
 
