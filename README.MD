@@ -255,7 +255,7 @@ python ./exploit_demos/user_data.py
 ```bash
 wfuzz -c -z range,1-100 --hw=0 http://$HOSTNAME:8081/users/FUZZ
 ```
-[Using wfuzz](./Screenshots/wfuzz_users.png)
+![Using wfuzz](./Screenshots/wfuzz_users.png)
 Resolution: on server side check the user's token and decode it, and only use the userid that is provided in the user token. The parameter field can be modified and therefore cannot be trusted
 ```js
 // ./FrontEnd/public/userprofile.html
@@ -526,7 +526,7 @@ python ./exploit_demos/user_data.py
 ```bash
 wfuzz -c -z range,1-100 --hw=0 http://$HOSTNAME:8081/users/FUZZ
 ```
-[Using wfuzz](./Screenshots/wfuzz_users.png)
+![Using wfuzz](./Screenshots/wfuzz_users.png)
 
 Resolution: on server side check the user's token and decode it, and only use the userid that is provided in the user token. The parameter field can be modified and therefore cannot be trusted
 
