@@ -197,10 +197,10 @@ Demo:
 Resolution:
 ```js
 dbConn.query(
-					`insert into product 
-					(name, description, categoryid, brand, price)
-					values(?, ?, ?, ?, ?);`,
-					[name, description, categoryid, brand, price]
+    `insert into product 
+    (name, description, categoryid, brand, price)
+    values(?, ?, ?, ?, ?);`,
+    [name, description, categoryid, brand, price]
 )
 ```
 [Brief](#9-post-users): Inserted data is not validated, resulting in stored XSS, Endpoint 3, 9, 18
