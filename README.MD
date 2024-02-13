@@ -17,67 +17,300 @@ To run the patched application, ```./start.bat```
 This application hardening exercise makes of a selection of 5 categories of OWASP TOP 10 2021 to audit.
 
 ### [A01 Broken Access Control](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
-Detailed: No access control put in place for endpoint 10, any requests, with or without token can get personal information from this endpoint
+[Detailed](#10-get-users): No access control put in place for [endpoint 10](#10-get-users), any requests, with or without token can get personal information from this endpoint
 Demo: 
 ```bash
 python ./exploit_demos/user_data.py
 ```
-Status: Resolved
+Vulnerability is missing middleware responsible for access control: 
+```js
+app.get("/users", (req, res) => {});
+```
+Resolution:
+```js
+function verifyTokenAdmin(req, res, next) {
+    // ... Pre-processing
 
-Brief: Allowing of forced browsing to access admin.html, the page is served but shortly redirected back to landing page on authentication failure. This authentication is done on the client side.
+    jwt.verify(token, config.getCurrentKey(), function (err, decoded) { 
+        if (err || decoded.type != 'Admin') { // Add another condition: if not admin, reject with HTTP 403
+            res.status(403);
+            return res.json({ auth: false, message: 'Not authorized!' });
+        } else { // This means that type is verified to be admin
+            req.userid = decoded.userid;
+            req.type = decoded.type;
+            next();
+        }
+    });
+}
+```
+
+[Brief](#adminhtml): Allowing of forced browsing to access [admin.html](#adminhtml), the page is served but shortly redirected back to landing page on authentication failure. This authentication is done on the client side which is a poor choice as clients can avoid execution of this code.
+Vulnerability seen on client side:
+```js
+if (data) {
+    let { userid, type } = data
+    if (type.toLowerCase() != "admin")
+    window.location.assign("http://localhost:3001/index.html")
+}
+```
 Demo: 
 ```bash
 python ./exploit_demos/admin.py
 ```
-Status: resolved
+```bash
+cutycapt --url=http://$HOSTNAME:3001/admin.html --delay=200 --out=admin200.png
+```
+Resolution:
+```js
+// FrontEnd/server.js
+// Serve admin.html only if the admin token is valid
+
+app.use('/admin', verifyTokenAdmin, (req, res) => {
+    res.sendFile(__dirname + "/public/admin/admin.html");
+});
+
+app.use(serveStatic(__dirname + "/public"));
+```
+
 ### [A02 Cryptographic failure](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
-Detailed: Uses HTTP protocol and is susceptible to MITM or session hijacking
+[Detailed](#network-protocol): Uses HTTP protocol and is susceptible to MITM or session hijacking
 Demo: Use Wireshark
-Status: resolved
+Vuln: Missing HTTPS implementation
+Resolution:
+```bash
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
+```
+```js
+const express = require('express');
+const https = require('https');
+const fs = require('fs');
 
-Brief: No key rotation is implemented
-Status: resolved
-### [A03 Injection]()
-Detailed: SQLi injection, endpoint 16 allows complete database dump, endpoint 5 allows code injection to allow deletion of reviews, endpoint 18 allows, code injection but has a low impact
-Demo: See endpoint 16
-Status: Resolved
+const app = express();
+const httpPort = 3001;
+const httpsPort = 3002;
 
-Brief: Inserted data is not validated, resulting in stored XSS, Endpoint 3, 9, 18
+// Middleware to redirect HTTP to HTTPS
+app.use((req, res, next) => {
+    if (!req.secure) {
+        url_https = `https://${req.headers.host.replace(/:\d+$/, `:${httpsPort}`)}${req.url}`
+        console.log(url_https)
+        return res.redirect(url_https);
+    }
+    next();
+});
+
+const options = {
+    key: fs.readFileSync('key.pem'),
+    cert: fs.readFileSync('cert.pem'),
+};
+
+const server = https.createServer(options, app);
+server.listen(httpsPort, () => {
+    console.log(`HTTPS server hosted at https://${HOSTNAME}:${httpsPort}`);
+});
+
+// Create HTTP server for redirection
+const httpServer = express();
+httpServer.use((req, res) => {
+    url_https = `https://${req.headers.host.replace(/:\d+$/, `:${httpsPort}`)}${req.url}`
+    return res.redirect(url_https);
+});
+
+httpServer.listen(httpPort, () => {
+    console.log(`HTTP server hosted at http://${HOSTNAME}:${httpPort}`);
+});
+```
+
+[Brief](#cryptography): No key rotation is implemented
+Vuln:
+```js
+var secret = '89f48478ofu84hfue8o8eije4';
+module.exports.key = secret;
+
+```
+Resolution:
+```js
+// ./BackEnd/config.js
+
+const crypto = require('crypto');
+const fs = require('fs');
+
+const keyFilePath = './secretKey.txt';
+
+function generateRandomKey(length) {
+    const buffer = crypto.randomBytes(length);
+    return buffer.toString('base64');
+}
+
+const rotationPeriodDays = 90;
+let lastRotationDate;
+let secret;
+
+function rotateKeyIfNeeded() {
+    const now = new Date();
+    const rotationThreshold = new Date(lastRotationDate.getTime() + rotationPeriodDays * 24 * 60 * 60 * 1000);
+
+    if (!lastRotationDate || now >= rotationThreshold) {
+        secret = generateRandomKey(32);
+        lastRotationDate = now;
+        const content = JSON.stringify({ secret, lastRotationDate });
+        fs.writeFileSync(keyFilePath, content, 'utf-8');
+    }
+}
+
+function getCurrentKey() {
+    if (!secret || !lastRotationDate) {
+        try {
+            const content = fs.readFileSync(keyFilePath, 'utf-8');
+            const data = JSON.parse(content);
+            secret = String(data.secret);
+            lastRotationDate = new Date(data.lastRotationDate);
+        } catch (error) {
+            // If the file doesn't exist or there's an error reading it, generate a new key and store
+            secret = generateRandomKey(32);
+            lastRotationDate = new Date();
+            const content = JSON.stringify({ secret, lastRotationDate });
+            fs.writeFileSync(keyFilePath, content, 'utf-8');
+        }
+    }
+
+    rotateKeyIfNeeded();
+    return secret;
+}
+
+module.exports.getCurrentKey = getCurrentKey;
+```
+
+### [A03 Injection](https://owasp.org/Top10/A03_2021-Injection/)
+[Detailed](#16-get-productid): SQLi injection, endpoint 16 allows complete database dump, endpoint 5 allows code injection to allow deletion of reviews, endpoint 18 allows, code injection but has a low impact
+**Injectable parameter in GET /product/:id**
+```js
+dbConn.query( `select p.productid, p.name, p.description, c.categoryid, category categoryname, p.brand, p.price, COUNT(distinct r.reviewid) reviewcount, pi.path imagepath, AVG( r.rating) rating, d.discountid, d.discount_percentage from product p join category c on c.categoryid = p.categoryid left join reviews r on r.productid = p.productid left join productimages pi on pi.productid = p.productid left join discount d on d.productid = p.productid 
+where p.productid = ${productid} GROUP BY p.productid`, [], function (err, results) dbConn.end();, (err, result) => {})
+```
+Demo: 
+```sql
+1 UNION SELECT null, o.userid, o.cart, o.total, u.username, u.email, u.contact, u.password, u.type, u.profile_pic_url, i.table_name, i.table_schema FROM user u, INFORMATION_SCHEMA.TABLES i, orders o UNION SELECT null, null, null, null, null, null, null, null, null, p.productid, null, null FROM product p
+```
+[click here for free data!!!](http://localhost:8081/product/1%20UNION%20SELECT%20null,%20o.userid,%20o.cart,%20o.total,%20u.username,%20u.email,%20u.contact,%20u.password,%20u.type,%20u.profile_pic_url,%20i.table_name,%20i.table_schema%20FROM%20user%20u,%20INFORMATION_SCHEMA.TABLES%20i,%20orders%20o%20UNION%20SELECT%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20null,%20p.productid,%20null,%20null%20FROM%20product%20p)
+
+[Brief](#9-post-users): Inserted data is not validated, resulting in stored XSS, Endpoint 3, 9, 18
+No vulnerable code, there is just a lack of validation
 Demo: Attempt from 
 ```
 http://localhost:3001/register.html
 ```
-See Endpoint 9
-Status: Resolved
+Register a user with username as a HTML inline script then post a review
+Resolution:
+```js
+const createDOMPurify = require('dompurify');
+const { JSDOM } = require('jsdom');
+
+const window = new JSDOM('').window;
+const DOMPurify = createDOMPurify(window);
+
+app.post("/order", verifyToken, (req, res) => {
+    const { cart, total } = req.body;
+
+    const sanitizedCart = DOMPurify.sanitize(cart);
+    const sanitizedTotal = DOMPurify.sanitize(total);
+    // ...
+});
+```
 
 Extra: No output sanitisation resulting in existing stored XSS displaying
 Status: Unresolved because I was paid to only find two vulnerabilities per category
 ### [A04 Insecure Design]()
-Detailed: Insecure token validation middleware does not deny access to sensitive endpoints that require admin tokens. Any request with a valid token can access these endpoints. Endpoint 3 (Operation Disruption), 4 (Data integrity), 5 (Partial DoS), 12 (User data integrity), 13 (low impact if not displayed), 15 (XSS), 17 (DoS), 23 (image integrity)
+[Detailed](#4-put-productproductid): Insecure token validation middleware does not deny access to sensitive endpoints that require admin tokens. Any request with a valid token can access these endpoints. Endpoint 3 (Operation Disruption), 4 (Data integrity), 5 (Partial DoS), 12 (User data integrity), 13 (low impact if not displayed), 15 (XSS), 17 (DoS), 23 (image integrity)
+Vuln is that ```verifyToken``` is **does not provide not enough security**:
+```js
+app.put("/product/:productid", verifyToken, (req, res) =>{})
+```
 Demo on endpoint 4: 
 ```bash
 python ./exploit_demos/update_product.py
 ```
-Status: Resolved
+Resolution is to add more security to the middleware:
+```js
+function verifyTokenAdmin(req, res, next) {
+    // Pre-processing
+    jwt.verify(token, config.getCurrentKey(), function (err, decoded) { 
+        if (err || decoded.type != 'Admin') { // Add another condition: if not admin, reject with HTTP 403
+            res.status(403);
+            return res.json({ auth: false, message: 'Not authorized!' });
+        } else { // This means that type is verified to be admin
+            req.userid = decoded.userid;
+            req.type = decoded.type;
+            next();
+        }
+    });
+}
+```
 
-Brief: Endpoint 11 accepts requests from anyone regardless of userid, and through incremental guessing, attackers can get user information
+[Brief](#11-get-usersid): Endpoint 11 accepts requests from anyone regardless of userid, and through incremental guessing, attackers can get user information
 Demo: 
 ```bash
 python ./exploit_demos/user_data.py
 ```
-Status: Resolved
+```bash
+wfuzz -c -z range,1-100 --hw=0 http://$HOSTNAME:8081/users/FUZZ
+```
+[Using wfuzz](./Screenshots/wfuzz_users.png)
+Resolution: on server side check the user's token and decode it, and only use the userid that is provided in the user token. The parameter field can be modified and therefore cannot be trusted
+```js
+// ./FrontEnd/public/userprofile.html
+
+var token = localStorage.getItem("JWT");
+    var userInfo = localStorage.getItem("User")
+    let userId = -1
+
+    function editUser() {
+        axios.get(`http://localhost:8081/users/${userId}`, {
+            headers: { 'authorization': 'Bearer ' + token }
+        })
+        // ...
+    }
+```
 ### [A07 Identification and Authentication failures]() 
-Detailed: Endpoint 8 allows brute forced or automated attacks, which can lead to privilege escalation
+[Detailed](#8-post-userlogin): Endpoint 8 allows brute forced or automated attacks, which can lead to privilege escalation
 Demo:
+Hackers can spam click login buttons and view Network panel in the browser of their choice to discover that the backend has no limits to how much attackers can guess passwords. Demo: 
 ```bash
 python ./exploit_demos/privilege_escalation.py
 ```
-Spam click the login button and view the Network panel in the browser
-Status: Resolved
+Resolution:
+```bash
+npm install express-rate-limit
+```
+```js
+// ./BackEnd/app.js
+const express = require('express');
+const rateLimit = require('express-rate-limit');
 
-Brief: Endpoint 9 does not enforce any password policies, which can also lead to privilege escalation, even if cryptography is applied
-Status: Resolved
+const app = express();
 
+const password_limiter = rateLimit({
+    windowMs: 5 * 60 * 1000, // 10 minutes
+    max: 5, // 5 reqs per 10 minutes
+});
+
+app.post("/user/login", password_limiter, function (req, res) {})
+```
+[Brief](#9-post-users): Endpoint 9 does not enforce any password policies, which can also lead to privilege escalation, even if cryptography is applied
+Demo, see that both weak password policy and lack of rate limiting contributes:
+```bash
+python ./exploit_demos/privilege_escalation.py
+```
+To implement a password policy
+```js
+const passwordValidator = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+
+if (!passwordValidator.test(password)) {
+    return res.status(422).json({
+        message: "Password must contain at least 8 characters, including one letter and one digit.",
+    });
+}
+```
 ## Endpoints
 
 ### 1. POST /user/isloggedin
@@ -192,13 +425,12 @@ Demo:
 ```bash
 python ./exploit_demos/privilege_escalation.py
 ```
-
 Resolution by adding a rate limiter middleware
 ```bash
 npm install express-rate-limit
 ```
-./BackEnd/app.js
 ```js
+// ./BackEnd/app.js
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 
@@ -294,7 +526,7 @@ python ./exploit_demos/user_data.py
 ```bash
 wfuzz -c -z range,1-100 --hw=0 http://$HOSTNAME:8081/users/FUZZ
 ```
-![Using wfuzz](./Screenshots/wfuzz_users.png)
+[Using wfuzz](./Screenshots/wfuzz_users.png)
 
 Resolution: on server side check the user's token and decode it, and only use the userid that is provided in the user token. The parameter field can be modified and therefore cannot be trusted
 
@@ -369,9 +601,7 @@ getProduct: (productid, callback) => {
 
 Unsure of the use for endpoint 25
 
-## Pages
-
-### admin.html 
+# admin.html 
 ##### Status: Resolved
 > [!WARNING]
 > A1 (brief): admin.html is protected by an inline script, however it exposes some admin endpoints as users can capture the page source and even render it. These admin endpoints should therefore not overlook any security
@@ -424,11 +654,9 @@ document.getElementById('login_admin').addEventListener('click', function() {
 </script>
 
 ```
-
 ## Cryptography 
-
 > :warning: **Caution:** A7 (extra): All passwords stored in the mySQL instance are not hashed
-Also related to A2: Cryptographic Failure, however according to [examples in A7](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures#Description), this vulnerability should be classified as A7. Modifications are required to workflows that handle passwords. In this example we use
+Also related to A2: Cryptographic Failure, however according to [examples in A7](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures#Description), this vulnerability should be classified as A7. Modifications are required to workflows that handle passwords.
 
 > :warning: **Caution:** A2: Weak cryptographic key used for signing JWT tokens. The current configuration is that its value remains the same forever
 #### Status: Resolved
@@ -490,9 +718,8 @@ function getCurrentKey() {
 }
 
 module.exports.getCurrentKey = getCurrentKey;
-
 ```
-
+# Network Protocol
 > :warning: **Caution:** A2 (brief): Uses HTTP protocol and is susceptible to MITM or session hijacking
 Using Wireshark, we can view packets on the same network and then steal this JWT token
 ![shork hijacking](/Screenshots/session_hijacking.png)

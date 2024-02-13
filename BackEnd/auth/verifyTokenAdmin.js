@@ -8,8 +8,7 @@ var jwt = require('jsonwebtoken');
 var config = require('../config');
 
 function verifyTokenAdmin(req, res, next) {
-    var token = req.headers['authorization']; 
-    console.log(token)
+    var token = req.headers['authorization'];
     if (!token || !token.includes('Bearer')) { 
         res.status(403);
 		return res.send({ auth: 'false', message: 'Not authorized!' });
