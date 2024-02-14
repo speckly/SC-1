@@ -324,10 +324,7 @@ Based on req.userid SELECT, SQL is prepared, all good
 ### 3. POST /order
 ##### Status:
 > [!NOTE] 
-> Optional chaining 
-```
-object?.property
-``` 
+> Optional chaining: ```object?.property``` 
 > This operator allows you to safely access properties of an object without causing an error if the object is null or undefined. 
 
 SELECT, INSERT, both prepared. 
@@ -777,7 +774,7 @@ httpServer.listen(httpPort, () => {
     console.log(`HTTP server hosted at http://${HOSTNAME}:${httpPort}`);
 });
 ```
-> [!INFORMATION] 
+> [!IMPORTANT] 
 > This fix may throw a [Mixed Content](https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content) Error depending on the browser used as backend is in HTTP and frontend is in HTTPS. For demonstration purposes, this protection is turned off
 
 # Minor modifications
