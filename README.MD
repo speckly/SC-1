@@ -323,11 +323,12 @@ Only some if statements to check data, no RWX operations,all good
 Based on req.userid SELECT, SQL is prepared, all good
 ### 3. POST /order
 ##### Status:
-> [!NOTE] Optional chaining 
+> [!NOTE] 
+> Optional chaining 
 ```
 object?.property
 ``` 
-This operator allows you to safely access properties of an object without causing an error if the object is null or undefined. 
+> This operator allows you to safely access properties of an object without causing an error if the object is null or undefined. 
 
 SELECT, INSERT, both prepared. 
 
@@ -401,7 +402,7 @@ User id is decoded using JWT, unless the JWT can be forged, the user id cannot b
 ##### Status:
 > :fire: **Critical:** A3 (detailed): Inserted data is not validated, and html elements can be stored in database, potentially resulting in stored XSS
 See Endpoint 9 A3 (brief)
-> [!Warning] 
+> [!WARNING] 
 > A3 (brief3): SQLi. Has low risk due to nature of SQL statement.
 
 ### 20. POST /discount/:productid
@@ -519,7 +520,7 @@ Resolution, create another middleware function to validate an admin token, see E
 ##### Status: Resolved
 > :warning: **Warning:**: A4 (brief): Since this endpoint can accept requests from anyone regardless of their userid, users can request for the user data of other users. Malicious threat actors can steal user data by making continuous requests to this endpoint and incrementing their id argument by 1 for each request.
 
-> [!INFORMATION]
+> [!NOTE]
 > 2021:A04 - An insecure design cannot be fixed by a perfect implementation as by definition, needed security controls were never created to defend against specific attacks. This endpoint only contains the verifytoken middleware but it is not sufficient.
 
 Exploit demo: 
@@ -671,7 +672,8 @@ This poses the following risks:
 3. Compliance Issues: Many regulatory standards and compliance frameworks require organisations to implement key management practices, including key rotation. Failure to comply with these standards can result in legal consequences, fines, or the loss of business certifications.
 
 The solution is to export the variable secret as the return of a function that checks if it has been 90 days since the last key rotation based on a stored date, this function will return the current key being used for signing the JWT if the key has not expired. If it has expired, the function will destroy the current key, update the date of last key rotation and then replace the current key with a newly generated key, then also returns the newly generated key. HS256 is the [default algorithm](https://github.com/auth0/node-jsonwebtoken#user-content-usage) used by the JWT token signing function, and therefore we should use a key length of 32 bytes. 
-> [!NOTE] The key is now stored in ./secretKey.txt so please protect this secret ie. configure OS-level permissions, add to .gitignore
+> [!NOTE]
+> The key is now stored in ./secretKey.txt so please protect this secret ie. configure OS-level permissions, add to .gitignore
 ```js
 // ./BackEnd/config.js
 
@@ -724,11 +726,10 @@ function getCurrentKey() {
 module.exports.getCurrentKey = getCurrentKey;
 ```
 # Network Protocol
-> :warning: **Caution:** A2 (brief): Uses HTTP protocol and is susceptible to MITM or session hijacking
+> [!WARNING] 
+> **Caution:** A2 (brief): Uses HTTP protocol and is susceptible to MITM or session hijacking
 Using Wireshark, we can view packets on the same network and then steal this JWT token
 ![shork hijacking](/Screenshots/session_hijacking.png)
-> [!INFORMATION] 
-> This fix may throw a [Mixed Content](https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content) Error depending on the browser used as backend is in HTTP and frontend is in HTTPS. For demonstration purposes, this protection is turned off
 
 Resolution, transition from HTTP to HTTPS by including a self signed certificate and updating the server configurations for both frontend and backend, and redirect HTTP port to HTTPS port:
 To create the certificate:
@@ -776,7 +777,8 @@ httpServer.listen(httpPort, () => {
     console.log(`HTTP server hosted at http://${HOSTNAME}:${httpPort}`);
 });
 ```
-
+> [!INFORMATION] 
+> This fix may throw a [Mixed Content](https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content) Error depending on the browser used as backend is in HTTP and frontend is in HTTPS. For demonstration purposes, this protection is turned off
 
 # Minor modifications
 Commented out the hiding of logout container as it is needed for users to clear their local storage. It will happen when keys rotate and user tokens are thus invalidated
